@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الخزائن والتسويات</title>
+    
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-cash-register me-2"></i>
+                نظام إدارة الخزائن والتسويات
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadAdvancedDashboard()">
+                            <i class="fas fa-tachometer-alt me-1"></i>
+                            لوحة التحكم
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadPartnersModule()">
+                            <i class="fas fa-users me-1"></i>
+                            الشركاء
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadProjectsModule()">
+                            <i class="fas fa-project-diagram me-1"></i>
+                            المشاريع
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadTransactionsModule()">
+                            <i class="fas fa-exchange-alt me-1"></i>
+                            المعاملات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadSettlementsModule()">
+                            <i class="fas fa-calculator me-1"></i>
+                            التسويات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadCashboxesModule()">
+                            <i class="fas fa-vault me-1"></i>
+                            الخزائن
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadCustomersModule()">
+                            <i class="fas fa-users me-1"></i>
+                            العملاء
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadSuppliersModule()">
+                            <i class="fas fa-truck me-1"></i>
+                            الموردين
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadReceivablesModule()">
+                            <i class="fas fa-hand-holding-usd me-1"></i>
+                            سندات القبض
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadPayablesModule()">
+                            <i class="fas fa-credit-card me-1"></i>
+                            سندات الصرف
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadRevenuesModule()">
+                            <i class="fas fa-chart-line me-1"></i>
+                            الإيرادات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadExpensesModule()">
+                            <i class="fas fa-receipt me-1"></i>
+                            المصروفات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="loadReportsModule()">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            التقارير
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <!-- Notifications -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell me-1"></i>
+                            الإشعارات
+                            <span id="notificationBadge" class="badge bg-danger" style="display: none;">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">الإشعارات</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="showNotificationSettings()">
+                                <i class="fas fa-cog me-2"></i>
+                                إعدادات الإشعارات
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="clearAllNotifications()">
+                                <i class="fas fa-trash me-2"></i>
+                                مسح جميع الإشعارات
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Settings -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>
+                            الإعدادات
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="backupDataModule()">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>
+                                نسخ احتياطي
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="restoreDataModule()">
+                                <i class="fas fa-cloud-download-alt me-2"></i>
+                                استعادة البيانات
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="showNotificationSettings()">
+                                <i class="fas fa-bell me-2"></i>
+                                إعدادات الإشعارات
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSystemInfo()">
+                                <i class="fas fa-info-circle me-2"></i>
+                                معلومات النظام
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="loadSampleData()">
+                                <i class="fas fa-database me-2"></i>
+                                البيانات التجريبية
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div id="mainContent">
+            <!-- Dashboard will be loaded here by default -->
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Database -->
+    <script src="js/database.js"></script>
+    
+    <!-- App Logic -->
+    <script src="js/app.js"></script>
+    
+    <!-- Modules -->
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/partners.js"></script>
+    <script src="js/modules/projects.js"></script>
+    <script src="js/modules/transactions.js"></script>
+    <script src="js/modules/settlements.js"></script>
+    <script src="js/modules/cashboxes.js"></script>
+    <script src="js/modules/customers.js"></script>
+    <script src="js/modules/suppliers.js"></script>
+    <script src="js/modules/receivables.js"></script>
+    <script src="js/modules/payables.js"></script>
+    <script src="js/modules/revenues.js"></script>
+    <script src="js/modules/expenses.js"></script>
+    <script src="js/modules/reports.js"></script>
+    <script src="js/modules/backup.js"></script>
+    <script src="js/modules/notifications.js"></script>
+    <script src="js/sample-data.js"></script>
+</body>
+</html>
