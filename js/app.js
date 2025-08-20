@@ -2,22 +2,29 @@
 class TreasuryApp {
     constructor() {
         this.currentModule = 'dashboard';
-        this.init();
+        this.dbManager = null;
     }
 
     async init() {
-        // Wait for database to be ready
-        await dbManager.init();
-        
-        // Load dashboard by default
-        this.loadDashboard();
-        
-        // Add event listeners
-        this.addEventListeners();
+        try {
+            // Wait for database to be ready
+            this.dbManager = new DatabaseManager();
+            await this.dbManager.init();
+            
+            // Load dashboard by default
+            this.loadDashboard();
+            
+            // Add event listeners
+            this.addEventListeners();
+            
+            console.log('تم تهيئة التطبيق بنجاح');
+        } catch (error) {
+            console.error('خطأ في تهيئة التطبيق:', error);
+            this.showError('خطأ في تهيئة التطبيق: ' + error.message);
+        }
     }
 
     addEventListeners() {
-        // Navigation event listeners are handled in HTML onclick attributes
         document.addEventListener('DOMContentLoaded', () => {
             console.log('تم تحميل التطبيق بنجاح');
         });
@@ -38,7 +45,7 @@ class TreasuryApp {
         `;
 
         try {
-            const stats = await dbManager.getDashboardStats();
+            const stats = await this.dbManager.getDashboardStats();
             this.renderDashboard(stats);
         } catch (error) {
             this.showError('خطأ في تحميل لوحة التحكم: ' + error.message);
@@ -63,7 +70,7 @@ class TreasuryApp {
                         <div class="dashboard-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="card-value">${stats.totalPartners}</div>
+                                    <div class="card-value">${stats.totalPartners || 0}</div>
                                     <div class="card-label">إجمالي الشركاء</div>
                                 </div>
                                 <div class="card-icon">
@@ -77,7 +84,7 @@ class TreasuryApp {
                         <div class="dashboard-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="card-value">${stats.totalProjects}</div>
+                                    <div class="card-value">${stats.totalProjects || 0}</div>
                                     <div class="card-label">إجمالي المشاريع</div>
                                 </div>
                                 <div class="card-icon">
@@ -91,7 +98,7 @@ class TreasuryApp {
                         <div class="dashboard-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="card-value">${stats.totalTransactions}</div>
+                                    <div class="card-value">${stats.totalTransactions || 0}</div>
                                     <div class="card-label">إجمالي المعاملات</div>
                                 </div>
                                 <div class="card-icon">
@@ -105,7 +112,7 @@ class TreasuryApp {
                         <div class="dashboard-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="card-value">${stats.totalSettlements}</div>
+                                    <div class="card-value">${stats.totalSettlements || 0}</div>
                                     <div class="card-label">إجمالي التسويات</div>
                                 </div>
                                 <div class="card-icon">
@@ -117,69 +124,38 @@ class TreasuryApp {
                 </div>
 
                 <div class="row mb-4">
-                    <div class="col-lg-4 col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-chart-line me-2 text-success"></i>
-                                    الإيرادات والمصروفات
-                                </h5>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="text-success">
-                                            <h4>${this.formatCurrency(stats.totalRevenue)}</h4>
-                                            <small>إجمالي الإيرادات</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-danger">
-                                            <h4>${this.formatCurrency(stats.totalExpenses)}</h4>
-                                            <small>إجمالي المصروفات</small>
-                                        </div>
+                    <div class="col-lg-6 mb-3">
+                        <div class="dashboard-card">
+                            <h5 class="card-title">
+                                <i class="fas fa-chart-line me-2"></i>
+                                الإيرادات والمصروفات
+                            </h5>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="text-success">
+                                        <div class="h4">${this.formatCurrency(stats.totalRevenue || 0)}</div>
+                                        <small>إجمالي الإيرادات</small>
                                     </div>
                                 </div>
-                                <hr>
-                                <div class="text-center">
-                                    <h5 class="${stats.netProfit >= 0 ? 'text-success' : 'text-danger'}">
-                                        ${this.formatCurrency(stats.netProfit)}
-                                    </h5>
-                                    <small>صافي الربح</small>
+                                <div class="col-6">
+                                    <div class="text-danger">
+                                        <div class="h4">${this.formatCurrency(stats.totalExpenses || 0)}</div>
+                                        <small>إجمالي المصروفات</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-lg-4 col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-vault me-2 text-primary"></i>
-                                    الخزائن
-                                </h5>
-                                <div class="text-center">
-                                    <h3 class="text-primary">${this.formatCurrency(stats.totalCashboxBalance)}</h3>
-                                    <small>إجمالي رصيد الخزائن</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-tasks me-2 text-info"></i>
-                                    حالة المشاريع
-                                </h5>
-                                <div class="text-center">
-                                    <h3 class="text-info">${stats.activeProjects}</h3>
-                                    <small>المشاريع النشطة</small>
-                                </div>
-                                <div class="progress mt-2">
-                                    <div class="progress-bar bg-info" 
-                                         style="width: ${stats.totalProjects > 0 ? (stats.activeProjects / stats.totalProjects * 100) : 0}%">
-                                    </div>
-                                </div>
+                    <div class="col-lg-6 mb-3">
+                        <div class="dashboard-card">
+                            <h5 class="card-title">
+                                <i class="fas fa-vault me-2"></i>
+                                الخزائن
+                            </h5>
+                            <div class="text-primary">
+                                <div class="h4">${this.formatCurrency(stats.totalCashboxBalance || 0)}</div>
+                                <small>إجمالي رصيد الخزائن</small>
                             </div>
                         </div>
                     </div>
@@ -187,18 +163,28 @@ class TreasuryApp {
 
                 <div class="row">
                     <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-clock me-2"></i>
-                                    آخر النشاطات
-                                </h5>
-                                <div id="recentActivities">
-                                    <div class="text-center text-muted">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        سيتم عرض آخر النشاطات هنا
-                                    </div>
-                                </div>
+                        <div class="dashboard-card">
+                            <h5 class="card-title">
+                                <i class="fas fa-clock me-2"></i>
+                                آخر النشاطات
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>النشاط</th>
+                                            <th>التاريخ</th>
+                                            <th>المبلغ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">
+                                                لا توجد نشاطات حديثة
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -207,17 +193,17 @@ class TreasuryApp {
         `;
     }
 
-    // Navigation functions
+    // Navigation
     updateActiveNav() {
-        // Remove active class from all nav items
+        // Remove active class from all nav links
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
         });
         
         // Add active class to current module
-        const currentNavItem = document.querySelector(`[onclick="load${this.currentModule.charAt(0).toUpperCase() + this.currentModule.slice(1)}()"]`);
-        if (currentNavItem) {
-            currentNavItem.classList.add('active');
+        const currentNavLink = document.querySelector(`[onclick*="${this.currentModule}"]`);
+        if (currentNavLink) {
+            currentNavLink.classList.add('active');
         }
     }
 
@@ -229,10 +215,15 @@ class TreasuryApp {
         }).format(amount);
     }
 
-    formatDate(dateString) {
-        return new Date(dateString).toLocaleDateString('ar-EG');
+    formatDate(date) {
+        return new Intl.DateTimeFormat('ar-EG', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(new Date(date));
     }
 
+    // Alert functions
     showSuccess(message) {
         this.showAlert(message, 'success');
     }
@@ -249,77 +240,113 @@ class TreasuryApp {
         this.showAlert(message, 'info');
     }
 
-    showAlert(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    showAlert(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer') || this.createAlertContainer();
+        
+        const alertId = 'alert-' + Date.now();
+        const alertHTML = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         `;
         
-        const container = document.querySelector('.container-fluid');
-        container.insertBefore(alertDiv, container.firstChild);
+        alertContainer.insertAdjacentHTML('beforeend', alertHTML);
         
-        // Auto dismiss after 5 seconds
+        // Auto remove after 5 seconds
         setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.remove();
             }
         }, 5000);
     }
 
-    // Modal utilities
+    createAlertContainer() {
+        const container = document.createElement('div');
+        container.id = 'alertContainer';
+        container.className = 'position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    // Modal functions
     showModal(title, content, size = 'modal-lg') {
-        const modalId = 'appModal';
-        let modal = document.getElementById(modalId);
-        
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = modalId;
-            modal.className = 'modal fade';
-            modal.innerHTML = `
-                <div class="modal-dialog ${size}">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        return new Promise((resolve) => {
+            const modalHTML = `
+                <div class="modal fade" id="appModal" tabindex="-1">
+                    <div class="modal-dialog ${size}">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${content}
+                            </div>
                         </div>
-                        <div class="modal-body"></div>
                     </div>
                 </div>
             `;
-            document.body.appendChild(modal);
-        }
-        
-        modal.querySelector('.modal-title').textContent = title;
-        modal.querySelector('.modal-body').innerHTML = content;
-        
-        const bootstrapModal = new bootstrap.Modal(modal);
-        bootstrapModal.show();
-        
-        return bootstrapModal;
+            
+            // Remove existing modal
+            const existingModal = document.getElementById('appModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            const modal = new bootstrap.Modal(document.getElementById('appModal'));
+            modal.show();
+            
+            document.getElementById('appModal').addEventListener('hidden.bs.modal', () => {
+                resolve();
+            });
+        });
     }
 
-    // Confirmation dialog
-    async confirm(message, title = 'تأكيد') {
+    async showConfirm(message, title = 'تأكيد') {
         return new Promise((resolve) => {
-            const modal = this.showModal(title, `
-                <div class="text-center">
-                    <p>${message}</p>
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-danger me-2" onclick="window.confirmResult = true; bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();">
-                            <i class="fas fa-check me-1"></i>
-                            نعم
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="window.confirmResult = false; bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();">
-                            <i class="fas fa-times me-1"></i>
-                            لا
-                        </button>
+            const modalHTML = `
+                <div class="modal fade" id="appModal" tabindex="-1">
+                    <div class="modal-dialog modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${message}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger me-2" onclick="window.confirmResult = true; bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();">
+                                    <i class="fas fa-check me-1"></i>
+                                    نعم
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="window.confirmResult = false; bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();">
+                                    <i class="fas fa-times me-1"></i>
+                                    لا
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            `, 'modal-sm');
+            `;
             
-            modal._element.addEventListener('hidden.bs.modal', () => {
+            // Remove existing modal
+            const existingModal = document.getElementById('appModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            const modal = new bootstrap.Modal(document.getElementById('appModal'));
+            modal.show();
+            
+            document.getElementById('appModal').addEventListener('hidden.bs.modal', () => {
                 resolve(window.confirmResult || false);
                 delete window.confirmResult;
             });
@@ -393,8 +420,12 @@ class TreasuryApp {
     }
 }
 
-// Initialize app
-const app = new TreasuryApp();
+// Initialize app when DOM is loaded
+let app;
+document.addEventListener('DOMContentLoaded', () => {
+    app = new TreasuryApp();
+    app.init();
+});
 
 // Global functions for navigation
 window.loadDashboard = () => app.loadDashboard();

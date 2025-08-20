@@ -4,7 +4,6 @@ class DatabaseManager {
         this.dbName = 'TreasuryManagementDB';
         this.dbVersion = 1;
         this.db = null;
-        this.init();
     }
 
     async init() {
@@ -102,29 +101,22 @@ class DatabaseManager {
         });
     }
 
-    async get(storeName, key) {
+    async get(storeName, id) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([storeName], 'readonly');
             const store = transaction.objectStore(storeName);
-            const request = store.get(key);
+            const request = store.get(id);
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
     }
 
-    async getAll(storeName, indexName = null, indexValue = null) {
+    async getAll(storeName) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([storeName], 'readonly');
             const store = transaction.objectStore(storeName);
-            let request;
-
-            if (indexName && indexValue !== null) {
-                const index = store.index(indexName);
-                request = index.getAll(indexValue);
-            } else {
-                request = store.getAll();
-            }
+            const request = store.getAll();
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
@@ -142,28 +134,35 @@ class DatabaseManager {
         });
     }
 
-    async delete(storeName, key) {
+    async delete(storeName, id) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
-            const request = store.delete(key);
+            const request = store.delete(id);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getByIndex(storeName, indexName, value) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const index = store.index(indexName);
+            const request = index.getAll(value);
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
     }
 
-    // Partners specific operations
+    // Partners operations
     async addPartner(partnerData) {
         return this.add('partners', {
             ...partnerData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            created_at: new Date().toISOString()
         });
-    }
-
-    async getPartnersByProject(projectId) {
-        return this.getAll('partners', 'project_id', projectId);
     }
 
     async updatePartnerBalance(partnerId, newBalance) {
@@ -176,36 +175,53 @@ class DatabaseManager {
         throw new Error('الشريك غير موجود');
     }
 
-    // Projects specific operations
+    // Projects operations
     async addProject(projectData) {
         return this.add('projects', {
             ...projectData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-    }
-
-    async getActiveProjects() {
-        return this.getAll('projects', 'status', 'active');
-    }
-
-    // Transactions specific operations
-    async addTransaction(transactionData) {
-        return this.add('transactions', {
-            ...transactionData,
             created_at: new Date().toISOString()
         });
     }
 
-    async getTransactionsByProject(projectId) {
-        return this.getAll('transactions', 'project_id', projectId);
+    // Transactions operations
+    async addTransaction(transactionData) {
+        const transaction = await this.add('transactions', {
+            ...transactionData,
+            created_at: new Date().toISOString()
+        });
+
+        // Update partner balance if partner_id is provided
+        if (transactionData.partner_id) {
+            const partner = await this.get('partners', transactionData.partner_id);
+            if (partner) {
+                const currentBalance = parseFloat(partner.current_balance || 0);
+                const amount = parseFloat(transactionData.amount);
+                const newBalance = transactionData.transaction_type === 'income' 
+                    ? currentBalance + amount 
+                    : currentBalance - amount;
+                
+                await this.updatePartnerBalance(transactionData.partner_id, newBalance);
+            }
+        }
+
+        // Update cashbox balance if cashbox_id is provided
+        if (transactionData.cashbox_id) {
+            const cashbox = await this.get('cashboxes', transactionData.cashbox_id);
+            if (cashbox) {
+                const currentBalance = parseFloat(cashbox.current_balance || 0);
+                const amount = parseFloat(transactionData.amount);
+                const newBalance = transactionData.transaction_type === 'income' 
+                    ? currentBalance + amount 
+                    : currentBalance - amount;
+                
+                await this.updateCashboxBalance(transactionData.cashbox_id, newBalance);
+            }
+        }
+
+        return transaction;
     }
 
-    async getTransactionsByPartner(partnerId) {
-        return this.getAll('transactions', 'partner_id', partnerId);
-    }
-
-    // Invoices specific operations
+    // Invoices operations
     async addInvoice(invoiceData) {
         return this.add('invoices', {
             ...invoiceData,
@@ -213,17 +229,7 @@ class DatabaseManager {
         });
     }
 
-    async updateInvoiceStatus(invoiceId, status) {
-        const invoice = await this.get('invoices', invoiceId);
-        if (invoice) {
-            invoice.status = status;
-            invoice.updated_at = new Date().toISOString();
-            return this.update('invoices', invoice);
-        }
-        throw new Error('الفاتورة غير موجودة');
-    }
-
-    // Settlements specific operations
+    // Settlements operations
     async addSettlement(settlementData) {
         return this.add('settlements', {
             ...settlementData,
@@ -231,15 +237,7 @@ class DatabaseManager {
         });
     }
 
-    async getSettlementsByProject(projectId) {
-        return this.getAll('settlements', 'project_id', projectId);
-    }
-
-    async getSettlementsByPartner(partnerId) {
-        return this.getAll('settlements', 'partner_id', partnerId);
-    }
-
-    // Cashboxes specific operations
+    // Cashboxes operations
     async addCashbox(cashboxData) {
         return this.add('cashboxes', {
             ...cashboxData,
@@ -304,36 +302,62 @@ class DatabaseManager {
 
     // Utility functions
     async getDashboardStats() {
-        const [partners, projects, transactions, settlements, cashboxes] = await Promise.all([
-            this.getAll('partners'),
-            this.getAll('projects'),
-            this.getAll('transactions'),
-            this.getAll('settlements'),
-            this.getAll('cashboxes')
-        ]);
+        try {
+            const [partners, projects, transactions, settlements, cashboxes] = await Promise.all([
+                this.getAll('partners'),
+                this.getAll('projects'),
+                this.getAll('transactions'),
+                this.getAll('settlements'),
+                this.getAll('cashboxes')
+            ]);
 
-        const totalRevenue = transactions
-            .filter(t => t.transaction_type === 'income')
-            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            const totalRevenue = transactions
+                .filter(t => t.transaction_type === 'income')
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
-        const totalExpenses = transactions
-            .filter(t => t.transaction_type === 'expense')
-            .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            const totalExpenses = transactions
+                .filter(t => t.transaction_type === 'expense')
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
-        const totalCashboxBalance = cashboxes
-            .reduce((sum, c) => sum + parseFloat(c.current_balance), 0);
+            const totalCashboxBalance = cashboxes
+                .reduce((sum, c) => sum + parseFloat(c.current_balance || 0), 0);
 
-        return {
-            totalPartners: partners.length,
-            totalProjects: projects.length,
-            activeProjects: projects.filter(p => p.status === 'active').length,
-            totalTransactions: transactions.length,
-            totalSettlements: settlements.length,
-            totalRevenue,
-            totalExpenses,
-            netProfit: totalRevenue - totalExpenses,
-            totalCashboxBalance
-        };
+            return {
+                totalPartners: partners.length,
+                totalProjects: projects.length,
+                activeProjects: projects.filter(p => p.status === 'active').length,
+                totalTransactions: transactions.length,
+                totalSettlements: settlements.length,
+                totalRevenue,
+                totalExpenses,
+                netProfit: totalRevenue - totalExpenses,
+                totalCashboxBalance
+            };
+        } catch (error) {
+            console.error('خطأ في جلب إحصائيات لوحة التحكم:', error);
+            return {
+                totalPartners: 0,
+                totalProjects: 0,
+                activeProjects: 0,
+                totalTransactions: 0,
+                totalSettlements: 0,
+                totalRevenue: 0,
+                totalExpenses: 0,
+                netProfit: 0,
+                totalCashboxBalance: 0
+            };
+        }
+    }
+
+    // Clear all data
+    async clearAllData() {
+        const stores = ['partners', 'projects', 'transactions', 'invoices', 'settlements', 'cashboxes', 'revenue', 'expenses'];
+        
+        for (const store of stores) {
+            const transaction = this.db.transaction([store], 'readwrite');
+            const objectStore = transaction.objectStore(store);
+            objectStore.clear();
+        }
     }
 }
 
