@@ -1,0 +1,50 @@
+{
+  "name": "treasury-management-system",
+  "version": "1.0.0",
+  "description": "نظام إدارة الخزائن والتسويات بين الشركاء في المشاريع",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "serve": "python -m http.server 8000",
+    "build": "echo 'No build process required for static files'",
+    "test": "echo 'No tests specified'",
+    "lint": "echo 'No linting configured'"
+  },
+  "keywords": [
+    "treasury",
+    "management",
+    "partners",
+    "projects",
+    "settlements",
+    "cashboxes",
+    "arabic",
+    "rtl",
+    "bootstrap",
+    "indexeddb"
+  ],
+  "author": "Treasury Management Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/treasury-management-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/treasury-management-system/issues"
+  },
+  "homepage": "https://github.com/your-username/treasury-management-system#readme",
+  "dependencies": {
+    "bootstrap": "^5.3.0",
+    "font-awesome": "^6.4.0",
+    "htmx": "^1.9.6"
+  },
+  "devDependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
