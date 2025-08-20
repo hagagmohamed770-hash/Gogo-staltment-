@@ -37,7 +37,15 @@ class NotificationsModule {
     async startMonitoring() {
         if (!this.settings.enableNotifications) return;
 
+        // Check if app is available
+        if (!window.app || !window.app.dbManager) {
+            console.log('App not ready yet, skipping notification monitoring');
+            return;
+        }
+
         try {
+            console.log('Starting notification monitoring...');
+            
             // Initial check
             await this.checkNotifications();
 
@@ -49,6 +57,8 @@ class NotificationsModule {
                     console.error('Error in periodic notification check:', error);
                 }
             }, this.settings.checkInterval);
+            
+            console.log('Notification monitoring started successfully');
         } catch (error) {
             console.error('Error starting notification monitoring:', error);
         }
@@ -460,11 +470,35 @@ class NotificationsModule {
 // Initialize notifications module
 const notificationsModule = new NotificationsModule();
 
-// Start monitoring when page loads
+// Start monitoring when app is ready
+const startNotificationsWhenReady = () => {
+    // Wait for app to be initialized
+    if (window.app && window.app.dbManager) {
+        console.log('App is ready, starting notifications monitoring...');
+        notificationsModule.startMonitoring();
+    } else {
+        // Retry after a short delay, but limit retries
+        if (!notificationsModule.retryCount) {
+            notificationsModule.retryCount = 0;
+        }
+        
+        if (notificationsModule.retryCount < 10) {
+            notificationsModule.retryCount++;
+            console.log(`Retrying notifications start (${notificationsModule.retryCount}/10)...`);
+            setTimeout(startNotificationsWhenReady, 1000);
+        } else {
+            console.log('Max retries reached, notifications monitoring will start when app is ready');
+        }
+    }
+};
+
+// Start monitoring when page loads, but wait for app to be ready
 document.addEventListener('DOMContentLoaded', () => {
-    notificationsModule.startMonitoring();
+    // Wait a bit for app initialization
+    setTimeout(startNotificationsWhenReady, 2000);
 });
 
 // Global functions
 window.showNotificationSettings = () => notificationsModule.showSettingsModal();
 window.clearAllNotifications = () => notificationsModule.clearAllNotifications();
+window.notificationsModule = notificationsModule;

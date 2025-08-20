@@ -21,6 +21,9 @@ class TreasuryApp {
             // Add event listeners
             this.addEventListeners();
             
+            // Start notifications monitoring after app is ready
+            this.startNotificationsMonitoring();
+            
             console.log('تم تهيئة التطبيق بنجاح');
         } catch (error) {
             console.error('خطأ في تهيئة التطبيق:', error);
@@ -273,6 +276,20 @@ class TreasuryApp {
         container.style.zIndex = '9999';
         document.body.appendChild(container);
         return container;
+    }
+
+    startNotificationsMonitoring() {
+        // Start notifications monitoring if available
+        if (window.notificationsModule && typeof window.notificationsModule.startMonitoring === 'function') {
+            console.log('Starting notifications monitoring from app...');
+            window.notificationsModule.startMonitoring();
+        } else {
+            console.log('Notifications module not available yet, will start later...');
+            // Try again after a short delay
+            setTimeout(() => {
+                this.startNotificationsMonitoring();
+            }, 2000);
+        }
     }
 
     // Modal functions
