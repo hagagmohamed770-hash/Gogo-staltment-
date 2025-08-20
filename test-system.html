@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام إدارة الخزائن</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h4><i class="fas fa-cogs me-2"></i>اختبار نظام إدارة الخزائن</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="testResults">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">جاري الاختبار...</span>
+                                </div>
+                                <p class="mt-2">جاري اختبار النظام...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <button class="btn btn-primary me-2" onclick="runTests()">
+                                <i class="fas fa-play me-1"></i>
+                                تشغيل الاختبارات
+                            </button>
+                            <button class="btn btn-success me-2" onclick="loadSampleData()">
+                                <i class="fas fa-database me-1"></i>
+                                تحميل البيانات التجريبية
+                            </button>
+                            <a href="index.html" class="btn btn-info">
+                                <i class="fas fa-home me-1"></i>
+                                العودة للنظام الرئيسي
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/modules/partners.js"></script>
+    <script src="js/modules/projects.js"></script>
+    <script src="js/modules/transactions.js"></script>
+    <script src="js/modules/settlements.js"></script>
+    <script src="js/modules/cashboxes.js"></script>
+    <script src="js/modules/reports.js"></script>
+    <script src="js/modules/backup.js"></script>
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/notifications.js"></script>
+    <script src="js/sample-data.js"></script>
+
+    <script>
+        // Test System
+        class SystemTester {
+            constructor() {
+                this.results = [];
+            }
+
+            async runAllTests() {
+                this.results = [];
+                const testResults = document.getElementById('testResults');
+                
+                testResults.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">جاري الاختبار...</span>
+                        </div>
+                        <p class="mt-2">جاري اختبار النظام...</p>
+                    </div>
+                `;
+
+                try {
+                    // Wait for app to initialize
+                    await this.waitForApp();
+                    
+                    // Run tests
+                    await this.testDatabase();
+                    await this.testModules();
+                    await this.testSampleData();
+                    
+                    this.displayResults();
+                } catch (error) {
+                    this.addResult('خطأ عام', false, error.message);
+                    this.displayResults();
+                }
+            }
+
+            async waitForApp() {
+                let retries = 0;
+                while ((!window.app || !window.app.dbManager) && retries < 20) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    retries++;
+                }
+                
+                if (!window.app || !window.app.dbManager) {
+                    throw new Error('فشل في تهيئة التطبيق');
+                }
+            }
+
+            async testDatabase() {
+                try {
+                    // Test database connection
+                    const stats = await window.app.dbManager.getDashboardStats();
+                    this.addResult('قاعدة البيانات', true, 'تم الاتصال بنجاح');
+                    
+                    // Test basic operations
+                    const testProject = {
+                        name: 'مشروع اختبار',
+                        description: 'مشروع للاختبار فقط',
+                        start_date: new Date().toISOString().split('T')[0],
+                        status: 'active'
+                    };
+                    
+                    const addedProject = await window.app.dbManager.addProject(testProject);
+                    this.addResult('إضافة مشروع', true, `تم إضافة المشروع برقم: ${addedProject.project_id}`);
+                    
+                    const retrievedProject = await window.app.dbManager.get('projects', addedProject.project_id);
+                    this.addResult('استرجاع مشروع', true, `تم استرجاع المشروع: ${retrievedProject.name}`);
+                    
+                    await window.app.dbManager.delete('projects', addedProject.project_id);
+                    this.addResult('حذف مشروع', true, 'تم حذف المشروع بنجاح');
+                    
+                } catch (error) {
+                    this.addResult('قاعدة البيانات', false, error.message);
+                }
+            }
+
+            async testModules() {
+                try {
+                    // Test partners module
+                    if (window.partnersModule) {
+                        this.addResult('وحدة الشركاء', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة الشركاء', false, 'غير متاحة');
+                    }
+
+                    // Test projects module
+                    if (window.projectsModule) {
+                        this.addResult('وحدة المشاريع', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة المشاريع', false, 'غير متاحة');
+                    }
+
+                    // Test sample data manager
+                    if (window.sampleDataManager) {
+                        this.addResult('مدير البيانات التجريبية', true, 'متاح وجاهز');
+                    } else {
+                        this.addResult('مدير البيانات التجريبية', false, 'غير متاح');
+                    }
+
+                } catch (error) {
+                    this.addResult('اختبار الوحدات', false, error.message);
+                }
+            }
+
+            async testSampleData() {
+                try {
+                    // Test sample data loading
+                    await window.sampleDataManager.loadSampleData();
+                    this.addResult('تحميل البيانات التجريبية', true, 'تم التحميل بنجاح');
+                    
+                    // Verify data was loaded
+                    const stats = await window.app.dbManager.getDashboardStats();
+                    if (stats.totalProjects > 0 && stats.totalPartners > 0) {
+                        this.addResult('التحقق من البيانات', true, `تم تحميل ${stats.totalProjects} مشاريع و ${stats.totalPartners} شركاء`);
+                    } else {
+                        this.addResult('التحقق من البيانات', false, 'لم يتم العثور على البيانات المحملة');
+                    }
+                    
+                } catch (error) {
+                    this.addResult('تحميل البيانات التجريبية', false, error.message);
+                }
+            }
+
+            addResult(testName, success, message) {
+                this.results.push({
+                    name: testName,
+                    success: success,
+                    message: message,
+                    timestamp: new Date().toLocaleTimeString('ar-SA')
+                });
+            }
+
+            displayResults() {
+                const testResults = document.getElementById('testResults');
+                const passedTests = this.results.filter(r => r.success).length;
+                const totalTests = this.results.length;
+                
+                let html = `
+                    <div class="mb-3">
+                        <h5>نتائج الاختبار</h5>
+                        <div class="alert ${passedTests === totalTests ? 'alert-success' : 'alert-warning'}">
+                            <i class="fas fa-${passedTests === totalTests ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                            ${passedTests} من ${totalTests} اختبار نجح
+                        </div>
+                    </div>
+                `;
+
+                this.results.forEach(result => {
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                            <div>
+                                <strong>${result.name}</strong>
+                                <br>
+                                <small class="text-muted">${result.message}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge ${result.success ? 'bg-success' : 'bg-danger'}">
+                                    <i class="fas fa-${result.success ? 'check' : 'times'}"></i>
+                                    ${result.success ? 'نجح' : 'فشل'}
+                                </span>
+                                <br>
+                                <small class="text-muted">${result.timestamp}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                testResults.innerHTML = html;
+            }
+        }
+
+        // Initialize tester
+        const systemTester = new SystemTester();
+
+        // Global function
+        window.runTests = () => systemTester.runAllTests();
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                systemTester.runAllTests();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
