@@ -446,5 +446,8 @@ class PartnersModule {
 // Initialize partners module
 const partnersModule = new PartnersModule();
 
+// Make module globally available
+window.partnersModule = partnersModule;
+
 // Global function for navigation
 window.loadPartnersModule = () => partnersModule.loadPartnersModule();

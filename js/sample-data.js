@@ -127,50 +127,118 @@ class SampleDataManager {
 
     async loadSampleData() {
         try {
-            // Load projects
-            for (const project of this.sampleProjects) {
-                await app.dbManager.addProject(project);
+            // Wait for app to be available with retry
+            let retries = 0;
+            while ((!window.app || !window.app.dbManager) && retries < 10) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
+            
+            if (!window.app || !window.app.dbManager) {
+                throw new Error('التطبيق غير جاهز. يرجى الانتظار قليلاً والمحاولة مرة أخرى.');
             }
 
-            // Load partners
-            for (const partner of this.samplePartners) {
-                await app.dbManager.addPartner(partner);
+            // Clear existing data first
+            await window.app.dbManager.clearAllData();
+
+            // Load projects first and get their IDs
+            const projectIds = [];
+            for (const project of this.sampleProjects) {
+                const projectData = { ...project };
+                delete projectData.project_id; // Remove any existing ID
+                const addedProject = await window.app.dbManager.addProject(projectData);
+                projectIds.push(addedProject.project_id);
+            }
+
+            // Load partners with correct project IDs
+            for (let i = 0; i < this.samplePartners.length; i++) {
+                const partner = { ...this.samplePartners[i] };
+                delete partner.partner_id; // Remove any existing ID
+                if (partner.project_id && partner.project_id <= projectIds.length) {
+                    partner.project_id = projectIds[partner.project_id - 1];
+                }
+                await window.app.dbManager.addPartner(partner);
             }
 
             // Load cashboxes
             for (const cashbox of this.sampleCashboxes) {
-                await app.dbManager.addCashbox(cashbox);
+                const cashboxData = { ...cashbox };
+                delete cashboxData.cashbox_id; // Remove any existing ID
+                await window.app.dbManager.addCashbox(cashboxData);
             }
 
-            // Load transactions
+            // Load transactions with correct IDs
             for (const transaction of this.sampleTransactions) {
-                await app.dbManager.addTransaction(transaction);
+                const transactionData = { ...transaction };
+                delete transactionData.transaction_id; // Remove any existing ID
+                
+                // Update project and partner IDs
+                if (transactionData.linked_project_id && transactionData.linked_project_id <= projectIds.length) {
+                    transactionData.linked_project_id = projectIds[transactionData.linked_project_id - 1];
+                }
+                
+                await window.app.dbManager.addTransaction(transactionData);
             }
 
-            app.showSuccess('تم تحميل البيانات التجريبية بنجاح!');
+            window.app.showSuccess('تم تحميل البيانات التجريبية بنجاح!');
             
-            // Reload dashboard
-            if (app.currentModule === 'dashboard') {
-                await app.loadDashboard();
+            // Reload current module
+            if (window.app.currentModule === 'dashboard') {
+                await window.app.loadDashboard();
+            } else if (window.app.currentModule === 'partners' && window.partnersModule) {
+                await window.partnersModule.loadPartnersModule();
+            } else if (window.app.currentModule === 'projects' && window.projectsModule) {
+                await window.projectsModule.loadProjectsModule();
+            } else {
+                // Default to dashboard
+                await window.app.loadDashboard();
             }
 
         } catch (error) {
-            app.showError('خطأ في تحميل البيانات التجريبية: ' + error.message);
+            console.error('خطأ في تحميل البيانات التجريبية:', error);
+            if (window.app && window.app.showError) {
+                window.app.showError('خطأ في تحميل البيانات التجريبية: ' + error.message);
+            } else {
+                alert('خطأ في تحميل البيانات التجريبية: ' + error.message);
+            }
         }
     }
 
     async clearAllData() {
         try {
-            await app.dbManager.clearAllData();
-            app.showSuccess('تم مسح جميع البيانات بنجاح!');
+            // Wait for app to be available with retry
+            let retries = 0;
+            while ((!window.app || !window.app.dbManager) && retries < 10) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
             
-            // Reload dashboard
-            if (app.currentModule === 'dashboard') {
-                await app.loadDashboard();
+            if (!window.app || !window.app.dbManager) {
+                throw new Error('التطبيق غير جاهز. يرجى الانتظار قليلاً والمحاولة مرة أخرى.');
+            }
+
+            await window.app.dbManager.clearAllData();
+            window.app.showSuccess('تم مسح جميع البيانات بنجاح!');
+            
+            // Reload current module
+            if (window.app.currentModule === 'dashboard') {
+                await window.app.loadDashboard();
+            } else if (window.app.currentModule === 'partners' && window.partnersModule) {
+                await window.partnersModule.loadPartnersModule();
+            } else if (window.app.currentModule === 'projects' && window.projectsModule) {
+                await window.projectsModule.loadProjectsModule();
+            } else {
+                // Default to dashboard
+                await window.app.loadDashboard();
             }
 
         } catch (error) {
-            app.showError('خطأ في مسح البيانات: ' + error.message);
+            console.error('خطأ في مسح البيانات:', error);
+            if (window.app && window.app.showError) {
+                window.app.showError('خطأ في مسح البيانات: ' + error.message);
+            } else {
+                alert('خطأ في مسح البيانات: ' + error.message);
+            }
         }
     }
 

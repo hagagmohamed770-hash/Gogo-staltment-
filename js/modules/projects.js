@@ -633,5 +633,8 @@ class ProjectsModule {
 // Initialize projects module
 const projectsModule = new ProjectsModule();
 
+// Make module globally available
+window.projectsModule = projectsModule;
+
 // Global function for navigation
 window.loadProjectsModule = () => projectsModule.loadProjectsModule();
