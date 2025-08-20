@@ -37,13 +37,21 @@ class NotificationsModule {
     async startMonitoring() {
         if (!this.settings.enableNotifications) return;
 
-        // Initial check
-        await this.checkNotifications();
+        try {
+            // Initial check
+            await this.checkNotifications();
 
-        // Set up periodic checking
-        this.checkInterval = setInterval(() => {
-            this.checkNotifications();
-        }, this.settings.checkInterval);
+            // Set up periodic checking
+            this.checkInterval = setInterval(async () => {
+                try {
+                    await this.checkNotifications();
+                } catch (error) {
+                    console.error('Error in periodic notification check:', error);
+                }
+            }, this.settings.checkInterval);
+        } catch (error) {
+            console.error('Error starting notification monitoring:', error);
+        }
     }
 
     stopMonitoring() {
@@ -59,20 +67,32 @@ class NotificationsModule {
 
             // Check low balance partners
             if (this.settings.showLowBalance) {
-                const lowBalanceNotifications = await this.checkLowBalancePartners();
-                notifications.push(...lowBalanceNotifications);
+                try {
+                    const lowBalanceNotifications = await this.checkLowBalancePartners();
+                    notifications.push(...lowBalanceNotifications);
+                } catch (error) {
+                    console.error('Error checking low balance partners:', error);
+                }
             }
 
             // Check overdue invoices
             if (this.settings.showOverdueInvoices) {
-                const overdueNotifications = await this.checkOverdueInvoices();
-                notifications.push(...overdueNotifications);
+                try {
+                    const overdueNotifications = await this.checkOverdueInvoices();
+                    notifications.push(...overdueNotifications);
+                } catch (error) {
+                    console.error('Error checking overdue invoices:', error);
+                }
             }
 
             // Check settlement reminders
             if (this.settings.showSettlementReminders) {
-                const settlementNotifications = await this.checkSettlementReminders();
-                notifications.push(...settlementNotifications);
+                try {
+                    const settlementNotifications = await this.checkSettlementReminders();
+                    notifications.push(...settlementNotifications);
+                } catch (error) {
+                    console.error('Error checking settlement reminders:', error);
+                }
             }
 
             // Update notifications
@@ -88,15 +108,30 @@ class NotificationsModule {
     async checkLowBalancePartners() {
         const notifications = [];
         try {
-            const partners = await app.dbManager.getAll('partners');
+            // Check if app and dbManager are available
+            if (!window.app || !window.app.dbManager) {
+                console.warn('App or dbManager not available for low balance check');
+                return notifications;
+            }
+
+            const partners = await window.app.dbManager.getAll('partners');
+            
+            if (!partners || !Array.isArray(partners)) {
+                console.warn('No partners data available');
+                return notifications;
+            }
             
             partners.forEach(partner => {
-                if (partner.current_balance < this.settings.lowBalanceThreshold) {
+                if (partner && partner.current_balance !== undefined && partner.current_balance < this.settings.lowBalanceThreshold) {
+                    const formattedBalance = window.app && window.app.formatCurrency ? 
+                        window.app.formatCurrency(partner.current_balance) : 
+                        `${partner.current_balance} جنيه`;
+                    
                     notifications.push({
                         id: `low-balance-${partner.partner_id}`,
                         type: 'warning',
                         title: 'رصيد منخفض',
-                        message: `رصيد الشريك ${partner.name} منخفض: ${app.formatCurrency(partner.current_balance)}`,
+                        message: `رصيد الشريك ${partner.name} منخفض: ${formattedBalance}`,
                         timestamp: new Date().toISOString(),
                         action: () => this.viewPartnerDetails(partner.partner_id)
                     });
@@ -111,11 +146,22 @@ class NotificationsModule {
     async checkOverdueInvoices() {
         const notifications = [];
         try {
-            const invoices = await app.dbManager.getAll('invoices');
+            // Check if app and dbManager are available
+            if (!window.app || !window.app.dbManager) {
+                console.warn('App or dbManager not available for overdue invoices check');
+                return notifications;
+            }
+
+            const invoices = await window.app.dbManager.getAll('invoices');
             const now = new Date();
             
+            if (!invoices || !Array.isArray(invoices)) {
+                console.warn('No invoices data available');
+                return notifications;
+            }
+            
             invoices.forEach(invoice => {
-                if (invoice.status === 'pending' && invoice.due_date) {
+                if (invoice && invoice.status === 'pending' && invoice.due_date) {
                     const dueDate = new Date(invoice.due_date);
                     const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
                     
@@ -140,16 +186,27 @@ class NotificationsModule {
     async checkSettlementReminders() {
         const notifications = [];
         try {
-            const projects = await app.dbManager.getAll('projects');
+            // Check if app and dbManager are available
+            if (!window.app || !window.app.dbManager) {
+                console.warn('App or dbManager not available for settlement reminders check');
+                return notifications;
+            }
+
+            const projects = await window.app.dbManager.getAll('projects');
+            
+            if (!projects || !Array.isArray(projects)) {
+                console.warn('No projects data available');
+                return notifications;
+            }
             
             for (const project of projects) {
-                if (project.status === 'active') {
-                    const partners = await app.dbManager.getByIndex('partners', 'project_id', project.project_id);
+                if (project && project.status === 'active') {
+                    const partners = await window.app.dbManager.getByIndex('partners', 'project_id', project.project_id);
                     
                     if (partners.length >= 2) {
                         // Check if settlements are needed
-                        const transactions = await app.dbManager.getByIndex('transactions', 'project_id', project.project_id);
-                        const settlements = await app.dbManager.getByIndex('settlements', 'project_id', project.project_id);
+                        const transactions = await window.app.dbManager.getByIndex('transactions', 'project_id', project.project_id);
+                        const settlements = await window.app.dbManager.getByIndex('settlements', 'project_id', project.project_id);
                         
                         if (transactions.length > 0 && settlements.length === 0) {
                             notifications.push({
@@ -344,7 +401,11 @@ class NotificationsModule {
             </form>
         `;
 
-        app.showModal('إعدادات الإشعارات', modalContent);
+        if (window.app && typeof window.app.showModal === 'function') {
+            window.app.showModal('إعدادات الإشعارات', modalContent);
+        } else {
+            console.error('App or showModal not available');
+        }
         
         // Add form submission handler
         document.getElementById('notificationSettingsForm').addEventListener('submit', (e) => {
@@ -373,7 +434,11 @@ class NotificationsModule {
             this.stopMonitoring();
         }
 
-        app.showSuccess('تم حفظ إعدادات الإشعارات بنجاح');
+        if (window.app && typeof window.app.showSuccess === 'function') {
+            window.app.showSuccess('تم حفظ إعدادات الإشعارات بنجاح');
+        } else {
+            console.log('تم حفظ إعدادات الإشعارات بنجاح');
+        }
         bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
     }
 
@@ -384,7 +449,11 @@ class NotificationsModule {
     clearAllNotifications() {
         this.notifications = [];
         this.updateNotificationBadge();
-        app.showSuccess('تم مسح جميع الإشعارات');
+        if (window.app && typeof window.app.showSuccess === 'function') {
+            window.app.showSuccess('تم مسح جميع الإشعارات');
+        } else {
+            console.log('تم مسح جميع الإشعارات');
+        }
     }
 }
 
