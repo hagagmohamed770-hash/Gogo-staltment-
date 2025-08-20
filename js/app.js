@@ -437,3 +437,51 @@ window.loadCashboxes = () => window.loadCashboxesModule();
 window.loadReports = () => window.loadReportsModule();
 window.backupData = () => window.backupDataModule();
 window.restoreData = () => window.restoreDataModule();
+
+// System info function
+window.showSystemInfo = () => {
+    const systemInfo = {
+        version: '1.0.0',
+        database: 'IndexedDB',
+        storage: navigator.storage ? 'Available' : 'Not Available',
+        notifications: 'Push API' in window ? 'Supported' : 'Not Supported',
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+        cookieEnabled: navigator.cookieEnabled,
+        onLine: navigator.onLine,
+        memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown',
+        cores: navigator.hardwareConcurrency || 'Unknown'
+    };
+
+    const modalContent = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>معلومات النظام</h6>
+                <table class="table table-sm">
+                    <tr><td>الإصدار:</td><td>${systemInfo.version}</td></tr>
+                    <tr><td>قاعدة البيانات:</td><td>${systemInfo.database}</td></tr>
+                    <tr><td>التخزين:</td><td>${systemInfo.storage}</td></tr>
+                    <tr><td>الإشعارات:</td><td>${systemInfo.notifications}</td></tr>
+                    <tr><td>اللغة:</td><td>${systemInfo.language}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>معلومات المتصفح</h6>
+                <table class="table table-sm">
+                    <tr><td>المنصة:</td><td>${systemInfo.platform}</td></tr>
+                    <tr><td>الذاكرة:</td><td>${systemInfo.memory}</td></tr>
+                    <tr><td>المعالجات:</td><td>${systemInfo.cores}</td></tr>
+                    <tr><td>الكوكيز:</td><td>${systemInfo.cookieEnabled ? 'مفعلة' : 'معطلة'}</td></tr>
+                    <tr><td>الاتصال:</td><td>${systemInfo.onLine ? 'متصل' : 'غير متصل'}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>معلومات المتصفح التفصيلية</h6>
+            <small class="text-muted">${systemInfo.userAgent}</small>
+        </div>
+    `;
+
+    app.showModal('معلومات النظام', modalContent);
+};
