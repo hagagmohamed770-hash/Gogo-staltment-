@@ -11,8 +11,12 @@ class TreasuryApp {
             this.dbManager = new DatabaseManager();
             await this.dbManager.init();
             
-            // Load dashboard by default
-            this.loadDashboard();
+            // Load advanced dashboard by default
+            if (typeof window.loadAdvancedDashboard === 'function') {
+                window.loadAdvancedDashboard();
+            } else {
+                this.loadDashboard();
+            }
             
             // Add event listeners
             this.addEventListeners();
@@ -355,13 +359,15 @@ class TreasuryApp {
 
     // Loading state
     showLoading(container) {
-        container.innerHTML = `
-            <div class="loading-spinner">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">جاري التحميل...</span>
+        if (container) {
+            container.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
     }
 
     // Table utilities
@@ -388,7 +394,7 @@ class TreasuryApp {
                         <tbody>
         `;
         
-        data.forEach(row => {
+        data.forEach((row, index) => {
             tableHTML += '<tr>';
             Object.values(row).forEach(value => {
                 tableHTML += `<td>${value}</td>`;
@@ -397,8 +403,15 @@ class TreasuryApp {
             if (actions) {
                 tableHTML += '<td>';
                 actions.forEach(action => {
+                    // Replace placeholder with actual data
+                    let onclick = action.onclick;
+                    if (typeof onclick === 'string' && onclick.includes('${')) {
+                        onclick = onclick.replace(/\$\{([^}]+)\}/g, (match, key) => {
+                            return row[key] || '';
+                        });
+                    }
                     tableHTML += `
-                        <button class="btn btn-sm ${action.class}" onclick="${action.onclick}" title="${action.title}">
+                        <button class="btn btn-sm ${action.class}" onclick="${onclick}" title="${action.title}">
                             <i class="${action.icon}"></i>
                         </button>
                     `;
@@ -429,25 +442,132 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global functions for navigation
 window.loadDashboard = () => app.loadDashboard();
-window.loadPartners = () => window.loadPartnersModule();
-window.loadProjects = () => window.loadProjectsModule();
-window.loadTransactions = () => window.loadTransactionsModule();
-window.loadSettlements = () => window.loadSettlementsModule();
-window.loadCashboxes = () => window.loadCashboxesModule();
-window.loadCustomersModule = () => window.customersModule.loadCustomersModule();
-window.loadSuppliersModule = () => window.suppliersModule.loadSuppliersModule();
-window.loadReceivablesModule = () => window.receivablesModule.loadReceivablesModule();
-window.loadPayablesModule = () => window.payablesModule.loadPayablesModule();
-window.loadRevenuesModule = () => window.revenuesModule.loadRevenuesModule();
-window.loadExpensesModule = () => window.expensesModule.loadExpensesModule();
-window.loadReports = () => window.loadReportsModule();
-window.backupData = () => window.backupDataModule();
-window.restoreData = () => window.restoreDataModule();
+window.loadAdvancedDashboard = () => {
+    if (window.dashboardModule && typeof window.dashboardModule.loadAdvancedDashboard === 'function') {
+        window.dashboardModule.loadAdvancedDashboard();
+    } else {
+        app.loadDashboard();
+    }
+};
+window.loadPartnersModule = () => {
+    if (window.partnersModule && typeof window.partnersModule.loadPartnersModule === 'function') {
+        window.partnersModule.loadPartnersModule();
+    } else {
+        console.error('Partners module not available');
+    }
+};
+window.loadProjectsModule = () => {
+    if (window.projectsModule && typeof window.projectsModule.loadProjectsModule === 'function') {
+        window.projectsModule.loadProjectsModule();
+    } else {
+        console.error('Projects module not available');
+    }
+};
+window.loadTransactionsModule = () => {
+    if (window.transactionsModule && typeof window.transactionsModule.loadTransactionsModule === 'function') {
+        window.transactionsModule.loadTransactionsModule();
+    } else {
+        console.error('Transactions module not available');
+    }
+};
+window.loadSettlementsModule = () => {
+    if (window.settlementsModule && typeof window.settlementsModule.loadSettlementsModule === 'function') {
+        window.settlementsModule.loadSettlementsModule();
+    } else {
+        console.error('Settlements module not available');
+    }
+};
+window.loadCashboxesModule = () => {
+    if (window.cashboxesModule && typeof window.cashboxesModule.loadCashboxesModule === 'function') {
+        window.cashboxesModule.loadCashboxesModule();
+    } else {
+        console.error('Cashboxes module not available');
+    }
+};
+window.loadCustomersModule = () => {
+    if (window.customersModule && typeof window.customersModule.loadCustomersModule === 'function') {
+        window.customersModule.loadCustomersModule();
+    } else {
+        console.error('Customers module not available');
+    }
+};
+window.loadSuppliersModule = () => {
+    if (window.suppliersModule && typeof window.suppliersModule.loadSuppliersModule === 'function') {
+        window.suppliersModule.loadSuppliersModule();
+    } else {
+        console.error('Suppliers module not available');
+    }
+};
+window.loadReceivablesModule = () => {
+    if (window.receivablesModule && typeof window.receivablesModule.loadReceivablesModule === 'function') {
+        window.receivablesModule.loadReceivablesModule();
+    } else {
+        console.error('Receivables module not available');
+    }
+};
+window.loadPayablesModule = () => {
+    if (window.payablesModule && typeof window.payablesModule.loadPayablesModule === 'function') {
+        window.payablesModule.loadPayablesModule();
+    } else {
+        console.error('Payables module not available');
+    }
+};
+window.loadRevenuesModule = () => {
+    if (window.revenuesModule && typeof window.revenuesModule.loadRevenuesModule === 'function') {
+        window.revenuesModule.loadRevenuesModule();
+    } else {
+        console.error('Revenues module not available');
+    }
+};
+window.loadExpensesModule = () => {
+    if (window.expensesModule && typeof window.expensesModule.loadExpensesModule === 'function') {
+        window.expensesModule.loadExpensesModule();
+    } else {
+        console.error('Expenses module not available');
+    }
+};
+window.loadReportsModule = () => {
+    if (window.reportsModule && typeof window.reportsModule.loadReportsModule === 'function') {
+        window.reportsModule.loadReportsModule();
+    } else {
+        console.error('Reports module not available');
+    }
+};
+window.backupDataModule = () => {
+    if (window.backupModule && typeof window.backupModule.backupData === 'function') {
+        window.backupModule.backupData();
+    } else {
+        console.error('Backup module not available');
+    }
+};
+window.restoreDataModule = () => {
+    if (window.backupModule && typeof window.backupModule.restoreData === 'function') {
+        window.backupModule.restoreData();
+    } else {
+        console.error('Backup module not available');
+    }
+};
+
+window.showNotificationSettings = () => {
+    if (window.notificationsModule && typeof window.notificationsModule.showSettingsModal === 'function') {
+        window.notificationsModule.showSettingsModal();
+    } else {
+        console.error('Notifications module not available');
+    }
+};
+
+window.clearAllNotifications = () => {
+    if (window.notificationsModule && typeof window.notificationsModule.clearAllNotifications === 'function') {
+        window.notificationsModule.clearAllNotifications();
+    } else {
+        console.error('Notifications module not available');
+    }
+};
 
 // System info function
 window.showSystemInfo = () => {
     const systemInfo = {
-        version: '1.0.0',
+        version: '1.2.0',
         database: 'IndexedDB',
         storage: navigator.storage ? 'Available' : 'Not Available',
         notifications: 'Push API' in window ? 'Supported' : 'Not Supported',
@@ -489,5 +609,9 @@ window.showSystemInfo = () => {
         </div>
     `;
 
-    app.showModal('معلومات النظام', modalContent);
+    if (app && typeof app.showModal === 'function') {
+        app.showModal('معلومات النظام', modalContent);
+    } else {
+        console.error('App not available');
+    }
 };
