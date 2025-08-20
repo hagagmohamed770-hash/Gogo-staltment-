@@ -20,13 +20,13 @@ class SettlementsModule {
     }
 
     async loadSettlements() {
-        this.currentSettlements = await dbManager.getAll('settlements');
+        this.currentSettlements = await app.dbManager.getAll('settlements');
         
         // Load related data for each settlement
         for (let settlement of this.currentSettlements) {
             // Load partner name
             if (settlement.partner_id) {
-                const partner = await dbManager.get('partners', settlement.partner_id);
+                const partner = await app.dbManager.get('partners', settlement.partner_id);
                 settlement.partner_name = partner ? partner.name : 'غير محدد';
             } else {
                 settlement.partner_name = 'غير محدد';
@@ -34,7 +34,7 @@ class SettlementsModule {
 
             // Load project name
             if (settlement.linked_project_id) {
-                const project = await dbManager.get('projects', settlement.linked_project_id);
+                const project = await app.dbManager.get('projects', settlement.linked_project_id);
                 settlement.project_name = project ? project.name : 'غير محدد';
             } else {
                 settlement.project_name = 'غير محدد';
@@ -98,7 +98,7 @@ class SettlementsModule {
     }
 
     async loadProjectFilterOptions() {
-        const projects = await dbManager.getAll('projects');
+        const projects = await app.dbManager.getAll('projects');
         const projectFilter = document.getElementById('projectFilter');
         
         projects.forEach(project => {
@@ -158,7 +158,7 @@ class SettlementsModule {
 
     async calculateSettlements() {
         try {
-            const projects = await dbManager.getAll('projects');
+            const projects = await app.dbManager.getAll('projects');
             
             if (projects.length === 0) {
                 app.showWarning('لا توجد مشاريع لحساب التسويات');
@@ -217,7 +217,7 @@ class SettlementsModule {
 
         try {
             // Get all partners in the project
-            const partners = await dbManager.getPartnersByProject(projectId);
+            const partners = await app.dbManager.getByIndex('partners', 'project_id', projectId);
             
             if (partners.length < 2) {
                 app.showWarning('يجب أن يكون هناك شريكين على الأقل لحساب التسويات');
@@ -225,7 +225,7 @@ class SettlementsModule {
             }
 
             // Get all transactions for the project
-            const transactions = await dbManager.getTransactionsByProject(projectId);
+            const transactions = await app.dbManager.getByIndex('transactions', 'project_id', projectId);
             
             // Calculate total project amount and each partner's contribution
             let totalProjectAmount = 0;
@@ -296,7 +296,7 @@ class SettlementsModule {
     }
 
     async showSettlementPreview(settlements, partners, projectId, settlementDate) {
-        const project = await dbManager.get('projects', projectId);
+        const project = await app.dbManager.get('projects', projectId);
         
         const modalContent = `
             <div class="mb-3">
@@ -357,10 +357,10 @@ class SettlementsModule {
         try {
             // Save all settlements
             for (const settlementData of settlements) {
-                await dbManager.addSettlement(settlementData);
+                await app.dbManager.addSettlement(settlementData);
                 
                 // Update partner balance
-                await dbManager.updatePartnerBalance(settlementData.partner_id, settlementData.final_balance);
+                await app.dbManager.updatePartnerBalance(settlementData.partner_id, settlementData.final_balance);
             }
 
             app.showSuccess(`تم حفظ ${settlements.length} تسوية بنجاح`);
@@ -373,8 +373,8 @@ class SettlementsModule {
     }
 
     async showAddSettlementModal() {
-        const partners = await dbManager.getAll('partners');
-        const projects = await dbManager.getAll('projects');
+        const partners = await app.dbManager.getAll('partners');
+        const projects = await app.dbManager.getAll('projects');
         
         const modalContent = `
             <form id="addSettlementForm">
@@ -469,7 +469,7 @@ class SettlementsModule {
     async updatePartnerBalance() {
         const partnerId = document.getElementById('settlementPartner').value;
         if (partnerId) {
-            const partner = await dbManager.get('partners', partnerId);
+            const partner = await app.dbManager.get('partners', partnerId);
             if (partner) {
                 document.getElementById('previousBalance').value = partner.current_balance || 0;
                 this.calculateFinalBalance();
@@ -498,10 +498,10 @@ class SettlementsModule {
                 date: document.getElementById('settlementDate').value
             };
 
-            await dbManager.addSettlement(settlementData);
+            await app.dbManager.addSettlement(settlementData);
             
             // Update partner balance
-            await dbManager.updatePartnerBalance(settlementData.partner_id, settlementData.final_balance);
+            await app.dbManager.updatePartnerBalance(settlementData.partner_id, settlementData.final_balance);
             
             app.showSuccess('تم إضافة التسوية بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -513,14 +513,14 @@ class SettlementsModule {
     }
 
     async editSettlement(settlementId) {
-        const settlement = await dbManager.get('settlements', settlementId);
+        const settlement = await app.dbManager.get('settlements', settlementId);
         if (!settlement) {
             app.showError('التسوية غير موجودة');
             return;
         }
 
-        const partners = await dbManager.getAll('partners');
-        const projects = await dbManager.getAll('projects');
+        const partners = await app.dbManager.getAll('partners');
+        const projects = await app.dbManager.getAll('projects');
         
         const modalContent = `
             <form id="editSettlementForm">
@@ -608,7 +608,7 @@ class SettlementsModule {
     async updateSettlement() {
         try {
             const settlementId = parseInt(document.getElementById('editSettlementId').value);
-            const settlement = await dbManager.get('settlements', settlementId);
+            const settlement = await app.dbManager.get('settlements', settlementId);
             
             if (!settlement) {
                 app.showError('التسوية غير موجودة');
@@ -627,20 +627,20 @@ class SettlementsModule {
             settlement.final_balance = parseFloat(document.getElementById('editFinalBalance').value);
             settlement.date = document.getElementById('editSettlementDate').value;
 
-            await dbManager.update('settlements', settlement);
+            await app.dbManager.update('settlements', settlement);
 
             // Update partner balances
             if (oldPartnerId !== settlement.partner_id) {
                 // Revert old partner balance
-                const oldPartner = await dbManager.get('partners', oldPartnerId);
+                const oldPartner = await app.dbManager.get('partners', oldPartnerId);
                 if (oldPartner) {
                     oldPartner.current_balance = oldPartner.current_balance - oldFinalBalance + oldPartner.previous_balance;
-                    await dbManager.updatePartnerBalance(oldPartnerId, oldPartner.current_balance);
+                    await app.dbManager.updatePartnerBalance(oldPartnerId, oldPartner.current_balance);
                 }
             }
 
             // Update new partner balance
-            await dbManager.updatePartnerBalance(settlement.partner_id, settlement.final_balance);
+            await app.dbManager.updatePartnerBalance(settlement.partner_id, settlement.final_balance);
             
             app.showSuccess('تم تحديث التسوية بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -652,14 +652,14 @@ class SettlementsModule {
     }
 
     async viewSettlementDetails(settlementId) {
-        const settlement = await dbManager.get('settlements', settlementId);
+        const settlement = await app.dbManager.get('settlements', settlementId);
         if (!settlement) {
             app.showError('التسوية غير موجودة');
             return;
         }
 
-        const partner = await dbManager.get('partners', settlement.partner_id);
-        const project = settlement.linked_project_id ? await dbManager.get('projects', settlement.linked_project_id) : null;
+        const partner = await app.dbManager.get('partners', settlement.partner_id);
+        const project = settlement.linked_project_id ? await app.dbManager.get('projects', settlement.linked_project_id) : null;
 
         const modalContent = `
             <div class="row">
@@ -710,20 +710,20 @@ class SettlementsModule {
         if (!confirmed) return;
 
         try {
-            const settlement = await dbManager.get('settlements', settlementId);
+            const settlement = await app.dbManager.get('settlements', settlementId);
             if (!settlement) {
                 app.showError('التسوية غير موجودة');
                 return;
             }
 
             // Revert partner balance
-            const partner = await dbManager.get('partners', settlement.partner_id);
+            const partner = await app.dbManager.get('partners', settlement.partner_id);
             if (partner) {
                 const revertedBalance = partner.current_balance - settlement.final_balance + settlement.previous_balance;
-                await dbManager.updatePartnerBalance(settlement.partner_id, revertedBalance);
+                await app.dbManager.updatePartnerBalance(settlement.partner_id, revertedBalance);
             }
 
-            await dbManager.delete('settlements', settlementId);
+            await app.dbManager.delete('settlements', settlementId);
             app.showSuccess('تم حذف التسوية بنجاح');
             await this.loadSettlementsModule();
         } catch (error) {
@@ -812,7 +812,7 @@ class SettlementsModule {
 
     async exportSettlements() {
         try {
-            const data = await dbManager.getAll('settlements');
+            const data = await app.dbManager.getAll('settlements');
             const csvContent = this.convertToCSV(data);
             this.downloadCSV(csvContent, 'settlements_export.csv');
             app.showSuccess('تم تصدير بيانات التسويات بنجاح');

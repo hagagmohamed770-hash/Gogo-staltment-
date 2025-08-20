@@ -20,13 +20,13 @@ class TransactionsModule {
     }
 
     async loadTransactions() {
-        this.currentTransactions = await dbManager.getAll('transactions');
+        this.currentTransactions = await app.dbManager.getAll('transactions');
         
         // Load related data for each transaction
         for (let transaction of this.currentTransactions) {
             // Load project name
             if (transaction.linked_project_id) {
-                const project = await dbManager.get('projects', transaction.linked_project_id);
+                const project = await app.dbManager.get('projects', transaction.linked_project_id);
                 transaction.project_name = project ? project.name : 'غير محدد';
             } else {
                 transaction.project_name = 'غير محدد';
@@ -34,7 +34,7 @@ class TransactionsModule {
 
             // Load partner name
             if (transaction.linked_partner_id) {
-                const partner = await dbManager.get('partners', transaction.linked_partner_id);
+                const partner = await app.dbManager.get('partners', transaction.linked_partner_id);
                 transaction.partner_name = partner ? partner.name : 'غير محدد';
             } else {
                 transaction.partner_name = 'غير محدد';
@@ -42,7 +42,7 @@ class TransactionsModule {
 
             // Load invoice details
             if (transaction.linked_invoice_id) {
-                const invoice = await dbManager.get('invoices', transaction.linked_invoice_id);
+                const invoice = await app.dbManager.get('invoices', transaction.linked_invoice_id);
                 transaction.invoice_number = invoice ? invoice.invoice_number : 'غير محدد';
                 transaction.invoice_status = invoice ? invoice.status : 'غير محدد';
             } else {
@@ -111,7 +111,7 @@ class TransactionsModule {
     }
 
     async loadProjectFilterOptions() {
-        const projects = await dbManager.getAll('projects');
+        const projects = await app.dbManager.getAll('projects');
         const projectFilter = document.getElementById('projectFilter');
         
         projects.forEach(project => {
@@ -187,8 +187,8 @@ class TransactionsModule {
     }
 
     async showAddTransactionModal() {
-        const projects = await dbManager.getAll('projects');
-        const partners = await dbManager.getAll('partners');
+        const projects = await app.dbManager.getAll('projects');
+        const partners = await app.dbManager.getAll('partners');
         
         const modalContent = `
             <form id="addTransactionForm">
@@ -314,7 +314,7 @@ class TransactionsModule {
             };
 
             // Save transaction first
-            const transactionId = await dbManager.addTransaction(transactionData);
+            const transactionId = await app.dbManager.addTransaction(transactionData);
 
             // If it's an income transaction and invoice fields are filled, create invoice
             if (transactionData.transaction_type === 'income' && 
@@ -328,12 +328,12 @@ class TransactionsModule {
                     linked_transaction_id: transactionId
                 };
 
-                await dbManager.addInvoice(invoiceData);
+                await app.dbManager.addInvoice(invoiceData);
 
                 // Update transaction with invoice ID
-                const transaction = await dbManager.get('transactions', transactionId);
+                const transaction = await app.dbManager.get('transactions', transactionId);
                 transaction.linked_invoice_id = transactionId;
-                await dbManager.update('transactions', transaction);
+                await app.dbManager.update('transactions', transaction);
             }
 
             // Update partner balance if partner is selected
@@ -354,19 +354,19 @@ class TransactionsModule {
     }
 
     async updatePartnerBalance(partnerId, amount, transactionType) {
-        const partner = await dbManager.get('partners', partnerId);
+        const partner = await app.dbManager.get('partners', partnerId);
         if (partner) {
             if (transactionType === 'income') {
                 partner.current_balance += amount;
             } else {
                 partner.current_balance -= amount;
             }
-            await dbManager.updatePartnerBalance(partnerId, partner.current_balance);
+            await app.dbManager.updatePartnerBalance(partnerId, partner.current_balance);
         }
     }
 
     async updateCashboxBalance(amount, transactionType) {
-        const cashboxes = await dbManager.getAll('cashboxes');
+        const cashboxes = await app.dbManager.getAll('cashboxes');
         if (cashboxes.length > 0) {
             const cashbox = cashboxes[0]; // Use first cashbox for now
             if (transactionType === 'income') {
@@ -374,20 +374,20 @@ class TransactionsModule {
             } else {
                 cashbox.current_balance -= amount;
             }
-            await dbManager.updateCashboxBalance(cashbox.cashbox_id, cashbox.current_balance);
+            await app.dbManager.updateCashboxBalance(cashbox.cashbox_id, cashbox.current_balance);
         }
     }
 
     async editTransaction(transactionId) {
-        const transaction = await dbManager.get('transactions', transactionId);
+        const transaction = await app.dbManager.get('transactions', transactionId);
         if (!transaction) {
             app.showError('المعاملة غير موجودة');
             return;
         }
 
-        const projects = await dbManager.getAll('projects');
-        const partners = await dbManager.getAll('partners');
-        const invoice = transaction.linked_invoice_id ? await dbManager.get('invoices', transaction.linked_invoice_id) : null;
+        const projects = await app.dbManager.getAll('projects');
+        const partners = await app.dbManager.getAll('partners');
+        const invoice = transaction.linked_invoice_id ? await app.dbManager.get('invoices', transaction.linked_invoice_id) : null;
         
         const modalContent = `
             <form id="editTransactionForm">
@@ -510,7 +510,7 @@ class TransactionsModule {
     async updateTransaction() {
         try {
             const transactionId = parseInt(document.getElementById('editTransactionId').value);
-            const transaction = await dbManager.get('transactions', transactionId);
+            const transaction = await app.dbManager.get('transactions', transactionId);
             
             if (!transaction) {
                 app.showError('المعاملة غير موجودة');
@@ -529,17 +529,17 @@ class TransactionsModule {
             transaction.linked_partner_id = document.getElementById('editTransactionPartner').value || null;
             transaction.description = document.getElementById('editTransactionDescription').value;
 
-            await dbManager.update('transactions', transaction);
+            await app.dbManager.update('transactions', transaction);
 
             // Update invoice if exists
             if (transaction.linked_invoice_id) {
-                const invoice = await dbManager.get('invoices', transaction.linked_invoice_id);
+                const invoice = await app.dbManager.get('invoices', transaction.linked_invoice_id);
                 if (invoice) {
                     invoice.invoice_number = document.getElementById('editInvoiceNumber').value;
                     invoice.amount = transaction.amount;
                     invoice.status = document.getElementById('editInvoiceStatus').value;
                     invoice.due_date = document.getElementById('editInvoiceDueDate').value || null;
-                    await dbManager.update('invoices', invoice);
+                    await app.dbManager.update('invoices', invoice);
                 }
             }
 
@@ -558,14 +558,14 @@ class TransactionsModule {
     async updateBalancesAfterEdit(oldAmount, oldPartnerId, oldType, newTransaction) {
         // Revert old partner balance
         if (oldPartnerId) {
-            const oldPartner = await dbManager.get('partners', oldPartnerId);
+            const oldPartner = await app.dbManager.get('partners', oldPartnerId);
             if (oldPartner) {
                 if (oldType === 'income') {
                     oldPartner.current_balance -= oldAmount;
                 } else {
                     oldPartner.current_balance += oldAmount;
                 }
-                await dbManager.updatePartnerBalance(oldPartnerId, oldPartner.current_balance);
+                await app.dbManager.updatePartnerBalance(oldPartnerId, oldPartner.current_balance);
             }
         }
 
@@ -575,7 +575,7 @@ class TransactionsModule {
         }
 
         // Update cashbox balance
-        const cashboxes = await dbManager.getAll('cashboxes');
+        const cashboxes = await app.dbManager.getAll('cashboxes');
         if (cashboxes.length > 0) {
             const cashbox = cashboxes[0];
             // Revert old transaction
@@ -590,20 +590,20 @@ class TransactionsModule {
             } else {
                 cashbox.current_balance -= newTransaction.amount;
             }
-            await dbManager.updateCashboxBalance(cashbox.cashbox_id, cashbox.current_balance);
+            await app.dbManager.updateCashboxBalance(cashbox.cashbox_id, cashbox.current_balance);
         }
     }
 
     async viewTransactionDetails(transactionId) {
-        const transaction = await dbManager.get('transactions', transactionId);
+        const transaction = await app.dbManager.get('transactions', transactionId);
         if (!transaction) {
             app.showError('المعاملة غير موجودة');
             return;
         }
 
-        const project = transaction.linked_project_id ? await dbManager.get('projects', transaction.linked_project_id) : null;
-        const partner = transaction.linked_partner_id ? await dbManager.get('partners', transaction.linked_partner_id) : null;
-        const invoice = transaction.linked_invoice_id ? await dbManager.get('invoices', transaction.linked_invoice_id) : null;
+        const project = transaction.linked_project_id ? await app.dbManager.get('projects', transaction.linked_project_id) : null;
+        const partner = transaction.linked_partner_id ? await app.dbManager.get('partners', transaction.linked_partner_id) : null;
+        const invoice = transaction.linked_invoice_id ? await app.dbManager.get('invoices', transaction.linked_invoice_id) : null;
 
         const modalContent = `
             <div class="row">
@@ -640,7 +640,7 @@ class TransactionsModule {
         if (!confirmed) return;
 
         try {
-            const transaction = await dbManager.get('transactions', transactionId);
+            const transaction = await app.dbManager.get('transactions', transactionId);
             if (!transaction) {
                 app.showError('المعاملة غير موجودة');
                 return;
@@ -648,24 +648,24 @@ class TransactionsModule {
 
             // Delete associated invoice if exists
             if (transaction.linked_invoice_id) {
-                await dbManager.delete('invoices', transaction.linked_invoice_id);
+                await app.dbManager.delete('invoices', transaction.linked_invoice_id);
             }
 
             // Update partner balance
             if (transaction.linked_partner_id) {
-                const partner = await dbManager.get('partners', transaction.linked_partner_id);
+                const partner = await app.dbManager.get('partners', transaction.linked_partner_id);
                 if (partner) {
                     if (transaction.transaction_type === 'income') {
                         partner.current_balance -= transaction.amount;
                     } else {
                         partner.current_balance += transaction.amount;
                     }
-                    await dbManager.updatePartnerBalance(transaction.linked_partner_id, partner.current_balance);
+                    await app.dbManager.updatePartnerBalance(transaction.linked_partner_id, partner.current_balance);
                 }
             }
 
             // Update cashbox balance
-            const cashboxes = await dbManager.getAll('cashboxes');
+            const cashboxes = await app.dbManager.getAll('cashboxes');
             if (cashboxes.length > 0) {
                 const cashbox = cashboxes[0];
                 if (transaction.transaction_type === 'income') {
@@ -673,10 +673,10 @@ class TransactionsModule {
                 } else {
                     cashbox.current_balance += transaction.amount;
                 }
-                await dbManager.updateCashboxBalance(cashbox.cashbox_id, cashbox.current_balance);
+                await app.dbManager.updateCashboxBalance(cashbox.cashbox_id, cashbox.current_balance);
             }
 
-            await dbManager.delete('transactions', transactionId);
+            await app.dbManager.delete('transactions', transactionId);
             app.showSuccess('تم حذف المعاملة بنجاح');
             await this.loadTransactionsModule();
         } catch (error) {
@@ -774,7 +774,7 @@ class TransactionsModule {
 
     async exportTransactions() {
         try {
-            const data = await dbManager.getAll('transactions');
+            const data = await app.dbManager.getAll('transactions');
             const csvContent = this.convertToCSV(data);
             this.downloadCSV(csvContent, 'transactions_export.csv');
             app.showSuccess('تم تصدير بيانات المعاملات بنجاح');

@@ -186,7 +186,7 @@ class ReportsModule {
 
     async loadProjectFilterOptions() {
         try {
-            const projects = await dbManager.getAll('projects');
+            const projects = await app.dbManager.getAll('projects');
             const projectFilter = document.getElementById('projectFilter');
             
             projects.forEach(project => {
@@ -202,7 +202,7 @@ class ReportsModule {
 
     async loadQuickStats() {
         try {
-            const stats = await dbManager.getDashboardStats();
+            const stats = await app.dbManager.getDashboardStats();
             const quickStats = document.getElementById('quickStats');
             
             quickStats.innerHTML = `
@@ -264,9 +264,9 @@ class ReportsModule {
 
     async generateFinancialReport() {
         try {
-            const stats = await dbManager.getDashboardStats();
-            const transactions = await dbManager.getAll('transactions');
-            const projects = await dbManager.getAll('projects');
+            const stats = await app.dbManager.getDashboardStats();
+            const transactions = await app.dbManager.getAll('transactions');
+            const projects = await app.dbManager.getAll('projects');
             
             const reportData = {
                 title: 'التقرير المالي الشامل',
@@ -359,8 +359,8 @@ class ReportsModule {
 
     async generatePartnersReport() {
         try {
-            const partners = await dbManager.getAll('partners');
-            const projects = await dbManager.getAll('projects');
+            const partners = await app.dbManager.getAll('partners');
+            const projects = await app.dbManager.getAll('projects');
             
             // Load project names for partners
             for (let partner of partners) {
@@ -439,9 +439,9 @@ class ReportsModule {
 
     async generateProjectsReport() {
         try {
-            const projects = await dbManager.getAll('projects');
-            const partners = await dbManager.getAll('partners');
-            const transactions = await dbManager.getAll('transactions');
+            const projects = await app.dbManager.getAll('projects');
+            const partners = await app.dbManager.getAll('partners');
+            const transactions = await app.dbManager.getAll('transactions');
             
             // Calculate project statistics
             for (let project of projects) {
@@ -534,9 +534,9 @@ class ReportsModule {
 
     async generateSettlementsReport() {
         try {
-            const settlements = await dbManager.getAll('settlements');
-            const partners = await dbManager.getAll('partners');
-            const projects = await dbManager.getAll('projects');
+            const settlements = await app.dbManager.getAll('settlements');
+            const partners = await app.dbManager.getAll('partners');
+            const projects = await app.dbManager.getAll('projects');
             
             // Load related data
             for (let settlement of settlements) {
@@ -678,7 +678,7 @@ class ReportsModule {
     }
 
     async getFilteredTransactions(startDate, endDate, projectFilter) {
-        let transactions = await dbManager.getAll('transactions');
+        let transactions = await app.dbManager.getAll('transactions');
         
         if (startDate) {
             transactions = transactions.filter(t => t.date >= startDate);
@@ -699,7 +699,7 @@ class ReportsModule {
     }
 
     async getFilteredPartners(projectFilter) {
-        let partners = await dbManager.getAll('partners');
+        let partners = await app.dbManager.getAll('partners');
         
         if (projectFilter) {
             partners = partners.filter(p => p.project_id == projectFilter);
@@ -714,7 +714,7 @@ class ReportsModule {
     }
 
     async getFilteredSettlements(startDate, endDate, projectFilter) {
-        let settlements = await dbManager.getAll('settlements');
+        let settlements = await app.dbManager.getAll('settlements');
         
         if (startDate) {
             settlements = settlements.filter(s => s.date >= startDate);
@@ -735,7 +735,7 @@ class ReportsModule {
     }
 
     async getCashboxesData() {
-        const cashboxes = await dbManager.getAll('cashboxes');
+        const cashboxes = await app.dbManager.getAll('cashboxes');
         
         return {
             title: 'تقرير الخزائن',

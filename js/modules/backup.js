@@ -8,7 +8,7 @@ class BackupModule {
         try {
             app.showInfo('جاري إنشاء النسخة الاحتياطية...');
             
-            const data = await dbManager.exportData();
+            const data = await app.dbManager.exportData();
             const backupData = {
                 timestamp: new Date().toISOString(),
                 version: '1.0',
@@ -72,7 +72,7 @@ class BackupModule {
                     if (!confirmed) return;
 
                     // Restore data
-                    await dbManager.importData(backupData.data);
+                    await app.dbManager.importData(backupData.data);
                     
                     app.showSuccess('تم استعادة البيانات بنجاح');
                     
@@ -318,7 +318,7 @@ class BackupModule {
         try {
             console.log('Performing automatic backup...');
             
-            const data = await dbManager.exportData();
+            const data = await app.dbManager.exportData();
             const backupData = {
                 timestamp: new Date().toISOString(),
                 version: '1.0',
@@ -347,7 +347,7 @@ class BackupModule {
         try {
             app.showInfo('جاري تصدير البيانات...');
             
-            const data = await dbManager.exportData();
+            const data = await app.dbManager.exportData();
             const csvData = this.convertToCSV(data);
             
             const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -405,7 +405,7 @@ class BackupModule {
             const stores = ['partners', 'projects', 'transactions', 'invoices', 'settlements', 'cashboxes', 'revenue', 'expenses'];
             
             for (const store of stores) {
-                const transaction = dbManager.db.transaction([store], 'readwrite');
+                const transaction = app.dbManager.db.transaction([store], 'readwrite');
                 const objectStore = transaction.objectStore(store);
                 await new Promise((resolve, reject) => {
                     const request = objectStore.clear();

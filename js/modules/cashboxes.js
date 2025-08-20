@@ -20,7 +20,7 @@ class CashboxesModule {
     }
 
     async loadCashboxes() {
-        this.currentCashboxes = await dbManager.getAll('cashboxes');
+        this.currentCashboxes = await app.dbManager.getAll('cashboxes');
     }
 
     renderCashboxesPage() {
@@ -167,7 +167,7 @@ class CashboxesModule {
                 description: document.getElementById('cashboxDescription').value
             };
 
-            await dbManager.addCashbox(cashboxData);
+            await app.dbManager.addCashbox(cashboxData);
             
             app.showSuccess('تم إضافة الخزنة بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -179,7 +179,7 @@ class CashboxesModule {
     }
 
     async editCashbox(cashboxId) {
-        const cashbox = await dbManager.get('cashboxes', cashboxId);
+        const cashbox = await app.dbManager.get('cashboxes', cashboxId);
         if (!cashbox) {
             app.showError('الخزنة غير موجودة');
             return;
@@ -238,7 +238,7 @@ class CashboxesModule {
     async updateCashbox() {
         try {
             const cashboxId = parseInt(document.getElementById('editCashboxId').value);
-            const cashbox = await dbManager.get('cashboxes', cashboxId);
+            const cashbox = await app.dbManager.get('cashboxes', cashboxId);
             
             if (!cashbox) {
                 app.showError('الخزنة غير موجودة');
@@ -251,7 +251,7 @@ class CashboxesModule {
             cashbox.description = document.getElementById('editCashboxDescription').value;
             cashbox.updated_at = new Date().toISOString();
 
-            await dbManager.update('cashboxes', cashbox);
+            await app.dbManager.update('cashboxes', cashbox);
             
             app.showSuccess('تم تحديث الخزنة بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -263,14 +263,14 @@ class CashboxesModule {
     }
 
     async viewCashboxDetails(cashboxId) {
-        const cashbox = await dbManager.get('cashboxes', cashboxId);
+        const cashbox = await app.dbManager.get('cashboxes', cashboxId);
         if (!cashbox) {
             app.showError('الخزنة غير موجودة');
             return;
         }
 
         // Get transactions related to this cashbox
-        const transactions = await dbManager.getAll('transactions');
+        const transactions = await app.dbManager.getAll('transactions');
         const cashboxTransactions = transactions.filter(t => 
             t.linked_cashbox_id === cashboxId
         ).slice(0, 10); // Get last 10 transactions
@@ -356,7 +356,7 @@ class CashboxesModule {
     }
 
     async showTransferModal(cashboxId) {
-        const cashbox = await dbManager.get('cashboxes', cashboxId);
+        const cashbox = await app.dbManager.get('cashboxes', cashboxId);
         if (!cashbox) {
             app.showError('الخزنة غير موجودة');
             return;
@@ -433,8 +433,8 @@ class CashboxesModule {
                 return;
             }
 
-            const fromCashbox = await dbManager.get('cashboxes', fromCashboxId);
-            const toCashbox = await dbManager.get('cashboxes', toCashboxId);
+            const fromCashbox = await app.dbManager.get('cashboxes', fromCashboxId);
+            const toCashbox = await app.dbManager.get('cashboxes', toCashboxId);
 
             if (!fromCashbox || !toCashbox) {
                 app.showError('الخزنة غير موجودة');
@@ -450,8 +450,8 @@ class CashboxesModule {
             fromCashbox.current_balance -= amount;
             toCashbox.current_balance += amount;
 
-            await dbManager.update('cashboxes', fromCashbox);
-            await dbManager.update('cashboxes', toCashbox);
+            await app.dbManager.update('cashboxes', fromCashbox);
+            await app.dbManager.update('cashboxes', toCashbox);
 
             // Create transfer transaction record
             const transferData = {
@@ -463,7 +463,7 @@ class CashboxesModule {
                 linked_to_cashbox_id: toCashboxId
             };
 
-            await dbManager.addTransaction(transferData);
+            await app.dbManager.addTransaction(transferData);
 
             app.showSuccess('تم التحويل بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -479,14 +479,14 @@ class CashboxesModule {
         if (!confirmed) return;
 
         try {
-            const cashbox = await dbManager.get('cashboxes', cashboxId);
+            const cashbox = await app.dbManager.get('cashboxes', cashboxId);
             if (!cashbox) {
                 app.showError('الخزنة غير موجودة');
                 return;
             }
 
             // Check if cashbox has transactions
-            const transactions = await dbManager.getAll('transactions');
+            const transactions = await app.dbManager.getAll('transactions');
             const cashboxTransactions = transactions.filter(t => 
                 t.linked_cashbox_id === cashboxId
             );
@@ -496,7 +496,7 @@ class CashboxesModule {
                 return;
             }
 
-            await dbManager.delete('cashboxes', cashboxId);
+            await app.dbManager.delete('cashboxes', cashboxId);
             app.showSuccess('تم حذف الخزنة بنجاح');
             await this.loadCashboxesModule();
         } catch (error) {
@@ -568,7 +568,7 @@ class CashboxesModule {
 
     async exportCashboxes() {
         try {
-            const data = await dbManager.getAll('cashboxes');
+            const data = await app.dbManager.getAll('cashboxes');
             const csvContent = this.convertToCSV(data);
             this.downloadCSV(csvContent, 'cashboxes_export.csv');
             app.showSuccess('تم تصدير بيانات الخزائن بنجاح');
