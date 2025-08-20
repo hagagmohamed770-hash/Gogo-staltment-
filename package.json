@@ -7,9 +7,13 @@
     "start": "python3 -m http.server 8000",
     "dev": "python3 -m http.server 8000",
     "serve": "python3 -m http.server 8000",
+    "start-win": "python -m http.server 8000",
     "build": "echo 'No build process required for static files'",
     "test": "echo 'No tests specified'",
-    "lint": "echo 'No linting configured'"
+    "lint": "echo 'No linting configured'",
+    "open": "open http://localhost:8000",
+    "open-win": "start http://localhost:8000",
+    "check": "node -c js/app.js && node -c js/database.js && echo '✅ All JavaScript files are valid'"
   },
   "keywords": [
     "treasury",
@@ -21,7 +25,9 @@
     "arabic",
     "rtl",
     "bootstrap",
-    "indexeddb"
+    "indexeddb",
+    "financial",
+    "accounting"
   ],
   "author": "Treasury Management Team",
   "license": "MIT",
