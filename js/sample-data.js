@@ -123,6 +123,144 @@ class SampleDataManager {
                 date: '2025-02-15'
             }
         ];
+
+        this.sampleCustomers = [
+            {
+                name: 'شركة التقنية المتقدمة',
+                phone: '0123456789',
+                email: 'info@tech.com',
+                address: 'شارع التكنولوجيا، القاهرة',
+                balance: 5000,
+                notes: 'عميل VIP'
+            },
+            {
+                name: 'مؤسسة الخدمات الرقمية',
+                phone: '0987654321',
+                email: 'contact@digital.com',
+                address: 'شارع الابتكار، الإسكندرية',
+                balance: 3000,
+                notes: 'عميل منتظم'
+            },
+            {
+                name: 'شركة الحلول الذكية',
+                phone: '0555666777',
+                email: 'hello@smart.com',
+                address: 'شارع المستقبل، الجيزة',
+                balance: 8000,
+                notes: 'عميل جديد'
+            }
+        ];
+
+        this.sampleSuppliers = [
+            {
+                name: 'شركة المعدات التقنية',
+                phone: '0111222333',
+                email: 'sales@equipment.com',
+                address: 'شارع الصناعة، القاهرة',
+                balance: 2000,
+                notes: 'مورد موثوق'
+            },
+            {
+                name: 'مؤسسة الخدمات اللوجستية',
+                phone: '0444555666',
+                email: 'info@logistics.com',
+                address: 'شارع النقل، الإسكندرية',
+                balance: 1500,
+                notes: 'مورد سريع'
+            }
+        ];
+
+        this.sampleReceivables = [
+            {
+                receivable_number: 'RCV-001',
+                customer_id: 1,
+                amount: 5000,
+                due_date: '2025-03-15',
+                description: 'فاتورة خدمات تطوير',
+                status: 'pending'
+            },
+            {
+                receivable_number: 'RCV-002',
+                customer_id: 2,
+                amount: 3000,
+                due_date: '2025-03-20',
+                description: 'فاتورة استشارات',
+                status: 'pending'
+            }
+        ];
+
+        this.samplePayables = [
+            {
+                payable_number: 'PAY-001',
+                supplier_id: 1,
+                amount: 2000,
+                due_date: '2025-03-10',
+                description: 'فاتورة معدات',
+                status: 'pending'
+            },
+            {
+                payable_number: 'PAY-002',
+                supplier_id: 2,
+                amount: 1500,
+                due_date: '2025-03-25',
+                description: 'فاتورة خدمات',
+                status: 'pending'
+            }
+        ];
+
+        this.sampleRevenues = [
+            {
+                description: 'إيراد من تطوير الموقع',
+                customer_id: 1,
+                amount: 10000,
+                category: 'services',
+                date: '2025-01-20',
+                notes: 'مشروع تطوير موقع إلكتروني'
+            },
+            {
+                description: 'إيراد من الاستشارات',
+                customer_id: 2,
+                amount: 5000,
+                category: 'consulting',
+                date: '2025-01-25',
+                notes: 'استشارات تقنية'
+            },
+            {
+                description: 'إيراد من المبيعات',
+                customer_id: 3,
+                amount: 8000,
+                category: 'sales',
+                date: '2025-02-01',
+                notes: 'بيع برمجيات'
+            }
+        ];
+
+        this.sampleExpenses = [
+            {
+                description: 'شراء معدات مكتبية',
+                supplier_id: 1,
+                amount: 2000,
+                category: 'operational',
+                date: '2025-01-15',
+                notes: 'طابعات وأجهزة'
+            },
+            {
+                description: 'مصاريف تسويق',
+                supplier_id: 2,
+                amount: 1500,
+                category: 'marketing',
+                date: '2025-01-20',
+                notes: 'إعلانات رقمية'
+            },
+            {
+                description: 'صيانة الأجهزة',
+                supplier_id: 1,
+                amount: 1000,
+                category: 'maintenance',
+                date: '2025-02-01',
+                notes: 'صيانة دورية'
+            }
+        ];
     }
 
     async loadSampleData() {
@@ -178,6 +316,48 @@ class SampleDataManager {
                 }
                 
                 await window.app.dbManager.addTransaction(transactionData);
+            }
+
+            // Load customers
+            for (const customer of this.sampleCustomers) {
+                const customerData = { ...customer };
+                delete customerData.customer_id; // Remove any existing ID
+                await window.app.dbManager.addCustomer(customerData);
+            }
+
+            // Load suppliers
+            for (const supplier of this.sampleSuppliers) {
+                const supplierData = { ...supplier };
+                delete supplierData.supplier_id; // Remove any existing ID
+                await window.app.dbManager.addSupplier(supplierData);
+            }
+
+            // Load receivables
+            for (const receivable of this.sampleReceivables) {
+                const receivableData = { ...receivable };
+                delete receivableData.receivable_id; // Remove any existing ID
+                await window.app.dbManager.addReceivable(receivableData);
+            }
+
+            // Load payables
+            for (const payable of this.samplePayables) {
+                const payableData = { ...payable };
+                delete payableData.payable_id; // Remove any existing ID
+                await window.app.dbManager.addPayable(payableData);
+            }
+
+            // Load revenues
+            for (const revenue of this.sampleRevenues) {
+                const revenueData = { ...revenue };
+                delete revenueData.revenue_id; // Remove any existing ID
+                await window.app.dbManager.addRevenue(revenueData);
+            }
+
+            // Load expenses
+            for (const expense of this.sampleExpenses) {
+                const expenseData = { ...expense };
+                delete expenseData.expense_id; // Remove any existing ID
+                await window.app.dbManager.addExpense(expenseData);
             }
 
             window.app.showSuccess('تم تحميل البيانات التجريبية بنجاح!');
@@ -255,6 +435,12 @@ class SampleDataManager {
                     <li><i class="fas fa-check text-success me-2"></i>5 شركاء</li>
                     <li><i class="fas fa-check text-success me-2"></i>2 خزائن</li>
                     <li><i class="fas fa-check text-success me-2"></i>4 معاملات مالية</li>
+                    <li><i class="fas fa-check text-success me-2"></i>3 عملاء</li>
+                    <li><i class="fas fa-check text-success me-2"></i>2 موردين</li>
+                    <li><i class="fas fa-check text-success me-2"></i>2 سندات قبض</li>
+                    <li><i class="fas fa-check text-success me-2"></i>2 سندات صرف</li>
+                    <li><i class="fas fa-check text-success me-2"></i>3 إيرادات</li>
+                    <li><i class="fas fa-check text-success me-2"></i>3 مصروفات</li>
                 </ul>
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>

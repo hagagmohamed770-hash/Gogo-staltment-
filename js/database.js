@@ -86,6 +86,48 @@ class DatabaseManager {
             expensesStore.createIndex('date', 'date', { unique: false });
         }
 
+        // جدول العملاء
+        if (!db.objectStoreNames.contains('customers')) {
+            const customersStore = db.createObjectStore('customers', { keyPath: 'customer_id', autoIncrement: true });
+            customersStore.createIndex('name', 'name', { unique: false });
+            customersStore.createIndex('phone', 'phone', { unique: false });
+            customersStore.createIndex('email', 'email', { unique: false });
+        }
+
+        // جدول الموردين
+        if (!db.objectStoreNames.contains('suppliers')) {
+            const suppliersStore = db.createObjectStore('suppliers', { keyPath: 'supplier_id', autoIncrement: true });
+            suppliersStore.createIndex('name', 'name', { unique: false });
+            suppliersStore.createIndex('phone', 'phone', { unique: false });
+            suppliersStore.createIndex('email', 'email', { unique: false });
+        }
+
+        // جدول سندات القبض
+        if (!db.objectStoreNames.contains('receivables')) {
+            const receivablesStore = db.createObjectStore('receivables', { keyPath: 'receivable_id', autoIncrement: true });
+            receivablesStore.createIndex('customer_id', 'customer_id', { unique: false });
+            receivablesStore.createIndex('status', 'status', { unique: false });
+            receivablesStore.createIndex('due_date', 'due_date', { unique: false });
+            receivablesStore.createIndex('number', 'receivable_number', { unique: true });
+        }
+
+        // جدول سندات الصرف
+        if (!db.objectStoreNames.contains('payables')) {
+            const payablesStore = db.createObjectStore('payables', { keyPath: 'payable_id', autoIncrement: true });
+            payablesStore.createIndex('supplier_id', 'supplier_id', { unique: false });
+            payablesStore.createIndex('status', 'status', { unique: false });
+            payablesStore.createIndex('due_date', 'due_date', { unique: false });
+            payablesStore.createIndex('number', 'payable_number', { unique: true });
+        }
+
+        // جدول الإيرادات (الجديد)
+        if (!db.objectStoreNames.contains('revenues')) {
+            const revenuesStore = db.createObjectStore('revenues', { keyPath: 'revenue_id', autoIncrement: true });
+            revenuesStore.createIndex('customer_id', 'customer_id', { unique: false });
+            revenuesStore.createIndex('category', 'category', { unique: false });
+            revenuesStore.createIndex('date', 'date', { unique: false });
+        }
+
         console.log('تم إنشاء جميع الجداول بنجاح');
     }
 
@@ -255,14 +297,75 @@ class DatabaseManager {
         throw new Error('الخزنة غير موجودة');
     }
 
-    // Revenue and Expenses operations
+    // Customers operations
+    async addCustomer(customerData) {
+        return this.add('customers', {
+            ...customerData,
+            created_at: new Date().toISOString()
+        });
+    }
+
+    // Suppliers operations
+    async addSupplier(supplierData) {
+        return this.add('suppliers', {
+            ...supplierData,
+            created_at: new Date().toISOString()
+        });
+    }
+
+    // Receivables operations
+    async addReceivable(receivableData) {
+        const receivable = await this.add('receivables', {
+            ...receivableData,
+            created_at: new Date().toISOString()
+        });
+
+        // Update customer balance if customer_id is provided
+        if (receivableData.customer_id) {
+            const customer = await this.get('customers', receivableData.customer_id);
+            if (customer) {
+                const currentBalance = parseFloat(customer.balance || 0);
+                const amount = parseFloat(receivableData.amount);
+                customer.balance = currentBalance + amount;
+                customer.updated_at = new Date().toISOString();
+                await this.update('customers', customer);
+            }
+        }
+
+        return receivable;
+    }
+
+    // Payables operations
+    async addPayable(payableData) {
+        const payable = await this.add('payables', {
+            ...payableData,
+            created_at: new Date().toISOString()
+        });
+
+        // Update supplier balance if supplier_id is provided
+        if (payableData.supplier_id) {
+            const supplier = await this.get('suppliers', payableData.supplier_id);
+            if (supplier) {
+                const currentBalance = parseFloat(supplier.balance || 0);
+                const amount = parseFloat(payableData.amount);
+                supplier.balance = currentBalance + amount;
+                supplier.updated_at = new Date().toISOString();
+                await this.update('suppliers', supplier);
+            }
+        }
+
+        return payable;
+    }
+
+    // Revenues operations
     async addRevenue(revenueData) {
-        return this.add('revenue', {
+        return this.add('revenues', {
             ...revenueData,
             created_at: new Date().toISOString()
         });
     }
 
+    // Expenses operations
     async addExpense(expenseData) {
         return this.add('expenses', {
             ...expenseData,

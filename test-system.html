@@ -57,12 +57,18 @@
     <script src="js/modules/projects.js"></script>
     <script src="js/modules/transactions.js"></script>
     <script src="js/modules/settlements.js"></script>
-    <script src="js/modules/cashboxes.js"></script>
-    <script src="js/modules/reports.js"></script>
-    <script src="js/modules/backup.js"></script>
-    <script src="js/modules/dashboard.js"></script>
-    <script src="js/modules/notifications.js"></script>
-    <script src="js/sample-data.js"></script>
+                    <script src="js/modules/cashboxes.js"></script>
+                <script src="js/modules/customers.js"></script>
+                <script src="js/modules/suppliers.js"></script>
+                <script src="js/modules/receivables.js"></script>
+                <script src="js/modules/payables.js"></script>
+                <script src="js/modules/revenues.js"></script>
+                <script src="js/modules/expenses.js"></script>
+                <script src="js/modules/reports.js"></script>
+                <script src="js/modules/backup.js"></script>
+                <script src="js/modules/dashboard.js"></script>
+                <script src="js/modules/notifications.js"></script>
+                <script src="js/sample-data.js"></script>
 
     <script>
         // Test System
@@ -156,6 +162,48 @@
                         this.addResult('وحدة المشاريع', false, 'غير متاحة');
                     }
 
+                    // Test customers module
+                    if (window.customersModule) {
+                        this.addResult('وحدة العملاء', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة العملاء', false, 'غير متاحة');
+                    }
+
+                    // Test suppliers module
+                    if (window.suppliersModule) {
+                        this.addResult('وحدة الموردين', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة الموردين', false, 'غير متاحة');
+                    }
+
+                    // Test receivables module
+                    if (window.receivablesModule) {
+                        this.addResult('وحدة سندات القبض', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة سندات القبض', false, 'غير متاحة');
+                    }
+
+                    // Test payables module
+                    if (window.payablesModule) {
+                        this.addResult('وحدة سندات الصرف', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة سندات الصرف', false, 'غير متاحة');
+                    }
+
+                    // Test revenues module
+                    if (window.revenuesModule) {
+                        this.addResult('وحدة الإيرادات', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة الإيرادات', false, 'غير متاحة');
+                    }
+
+                    // Test expenses module
+                    if (window.expensesModule) {
+                        this.addResult('وحدة المصروفات', true, 'متاحة وجاهزة');
+                    } else {
+                        this.addResult('وحدة المصروفات', false, 'غير متاحة');
+                    }
+
                     // Test sample data manager
                     if (window.sampleDataManager) {
                         this.addResult('مدير البيانات التجريبية', true, 'متاح وجاهز');
@@ -181,6 +229,21 @@
                     } else {
                         this.addResult('التحقق من البيانات', false, 'لم يتم العثور على البيانات المحملة');
                     }
+
+                    // Verify new modules data
+                    const customers = await window.app.dbManager.getAll('customers');
+                    const suppliers = await window.app.dbManager.getAll('suppliers');
+                    const receivables = await window.app.dbManager.getAll('receivables');
+                    const payables = await window.app.dbManager.getAll('payables');
+                    const revenues = await window.app.dbManager.getAll('revenues');
+                    const expenses = await window.app.dbManager.getAll('expenses');
+
+                    this.addResult('التحقق من العملاء', customers.length > 0, `تم تحميل ${customers.length} عميل`);
+                    this.addResult('التحقق من الموردين', suppliers.length > 0, `تم تحميل ${suppliers.length} مورد`);
+                    this.addResult('التحقق من سندات القبض', receivables.length > 0, `تم تحميل ${receivables.length} سند قبض`);
+                    this.addResult('التحقق من سندات الصرف', payables.length > 0, `تم تحميل ${payables.length} سند صرف`);
+                    this.addResult('التحقق من الإيرادات', revenues.length > 0, `تم تحميل ${revenues.length} إيراد`);
+                    this.addResult('التحقق من المصروفات', expenses.length > 0, `تم تحميل ${expenses.length} مصروف`);
                     
                 } catch (error) {
                     this.addResult('تحميل البيانات التجريبية', false, error.message);
