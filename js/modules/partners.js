@@ -20,13 +20,13 @@ class PartnersModule {
     }
 
     async loadPartners() {
-        this.currentPartners = await app.app.dbManager.getAll('partners');
+        this.currentPartners = await app.dbManager.getAll('partners');
         
         // Load project names for each partner
         for (let partner of this.currentPartners) {
             if (partner.project_id) {
                 try {
-                    const project = await app.app.dbManager.get('projects', partner.project_id);
+                    const project = await app.dbManager.get('projects', partner.project_id);
                     partner.project_name = project ? project.name : 'غير محدد';
                 } catch (error) {
                     partner.project_name = 'غير محدد';
@@ -130,7 +130,7 @@ class PartnersModule {
     }
 
     async showAddPartnerModal() {
-        const projects = await app.app.dbManager.getAll('projects');
+        const projects = await app.dbManager.getAll('projects');
         const projectOptions = projects.map(project => 
             `<option value="${project.project_id}">${project.name}</option>`
         ).join('');
@@ -192,7 +192,7 @@ class PartnersModule {
         }
 
         try {
-            await app.app.dbManager.addPartner(formData);
+            await app.dbManager.addPartner(formData);
             app.showSuccess('تم إضافة الشريك بنجاح');
             
             // Close modal and reload
@@ -204,13 +204,13 @@ class PartnersModule {
     }
 
     async editPartner(partnerId) {
-        const partner = await app.app.dbManager.get('partners', partnerId);
+        const partner = await app.dbManager.get('partners', partnerId);
         if (!partner) {
             app.showError('الشريك غير موجود');
             return;
         }
 
-        const projects = await app.app.dbManager.getAll('projects');
+        const projects = await app.dbManager.getAll('projects');
         const projectOptions = projects.map(project => 
             `<option value="${project.project_id}" ${partner.project_id === project.project_id ? 'selected' : ''}>${project.name}</option>`
         ).join('');
@@ -259,7 +259,7 @@ class PartnersModule {
 
     async updatePartner() {
         const partnerId = parseInt(document.getElementById('editPartnerId').value);
-        const partner = await app.app.dbManager.get('partners', partnerId);
+        const partner = await app.dbManager.get('partners', partnerId);
         
         if (!partner) {
             app.showError('الشريك غير موجود');
@@ -281,7 +281,7 @@ class PartnersModule {
         }
 
         try {
-            await app.app.dbManager.update('partners', updatedData);
+            await app.dbManager.update('partners', updatedData);
             app.showSuccess('تم تحديث بيانات الشريك بنجاح');
             
             // Close modal and reload
@@ -293,7 +293,7 @@ class PartnersModule {
     }
 
     async viewPartnerDetails(partnerId) {
-        const partner = await app.app.dbManager.get('partners', partnerId);
+        const partner = await app.dbManager.get('partners', partnerId);
         if (!partner) {
             app.showError('الشريك غير موجود');
             return;
@@ -302,7 +302,7 @@ class PartnersModule {
         let projectName = 'غير محدد';
         if (partner.project_id) {
             try {
-                const project = await app.app.dbManager.get('projects', partner.project_id);
+                const project = await app.dbManager.get('projects', partner.project_id);
                 projectName = project ? project.name : 'غير محدد';
             } catch (error) {
                 projectName = 'غير محدد';
@@ -335,7 +335,7 @@ class PartnersModule {
         
         if (confirmed) {
             try {
-                await app.app.dbManager.delete('partners', partnerId);
+                await app.dbManager.delete('partners', partnerId);
                 app.showSuccess('تم حذف الشريك بنجاح');
                 await this.loadPartnersModule();
             } catch (error) {

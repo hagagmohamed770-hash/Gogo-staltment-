@@ -20,11 +20,11 @@ class ProjectsModule {
     }
 
     async loadProjects() {
-        this.currentProjects = await app.app.dbManager.getAll('projects');
+        this.currentProjects = await app.dbManager.getAll('projects');
         
         // Calculate total share percentage for each project
         for (let project of this.currentProjects) {
-            const partners = await app.app.dbManager.getByIndex('partners', 'project_id', project.project_id);
+            const partners = await app.dbManager.getByIndex('partners', 'project_id', project.project_id);
             project.total_share_percentage = partners.reduce((sum, partner) => sum + (partner.share_percentage || 0), 0);
             project.partners_count = partners.length;
         }
@@ -207,7 +207,7 @@ class ProjectsModule {
                 total_share_percentage: 0
             };
 
-            await app.app.dbManager.addProject(projectData);
+            await app.dbManager.addProject(projectData);
             
             app.showSuccess('تم إضافة المشروع بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -219,7 +219,7 @@ class ProjectsModule {
     }
 
     async editProject(projectId) {
-        const project = await app.app.dbManager.get('projects', projectId);
+        const project = await app.dbManager.get('projects', projectId);
         if (!project) {
             app.showError('المشروع غير موجود');
             return;
@@ -286,7 +286,7 @@ class ProjectsModule {
     async updateProject() {
         try {
             const projectId = parseInt(document.getElementById('editProjectId').value);
-            const project = await app.app.dbManager.get('projects', projectId);
+            const project = await app.dbManager.get('projects', projectId);
             
             if (!project) {
                 app.showError('المشروع غير موجود');
@@ -300,7 +300,7 @@ class ProjectsModule {
             project.status = document.getElementById('editProjectStatus').value;
             project.updated_at = new Date().toISOString();
 
-            await app.app.dbManager.update('projects', project);
+            await app.dbManager.update('projects', project);
             
             app.showSuccess('تم تحديث المشروع بنجاح');
             bootstrap.Modal.getInstance(document.getElementById('appModal')).hide();
@@ -312,15 +312,15 @@ class ProjectsModule {
     }
 
     async viewProjectDetails(projectId) {
-        const project = await app.app.dbManager.get('projects', projectId);
+        const project = await app.dbManager.get('projects', projectId);
         if (!project) {
             app.showError('المشروع غير موجود');
             return;
         }
 
-        const partners = await app.app.dbManager.getByIndex('partners', 'project_id', projectId);
-        const transactions = await app.app.dbManager.getByIndex('transactions', 'project_id', projectId);
-        const settlements = await app.app.dbManager.getByIndex('settlements', 'project_id', projectId);
+        const partners = await app.dbManager.getByIndex('partners', 'project_id', projectId);
+        const transactions = await app.dbManager.getByIndex('transactions', 'project_id', projectId);
+        const settlements = await app.dbManager.getByIndex('settlements', 'project_id', projectId);
 
         const totalRevenue = transactions
             .filter(t => t.transaction_type === 'income')
